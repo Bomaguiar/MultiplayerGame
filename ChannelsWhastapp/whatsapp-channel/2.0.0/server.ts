@@ -27,7 +27,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js'
-import { readFileSync, writeFileSync, mkdirSync, existsSync, realpathSync } from 'fs'
+import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync, realpathSync } from 'fs'
 import { homedir } from 'os'
 import { join, basename } from 'path'
 
@@ -612,6 +612,11 @@ async function poll() {
       })
       if (pendingMessages.length > 50) pendingMessages.shift()  // cap buffer
 
+      // Also write to queue file for UserPromptSubmit hook injection.
+      // The hook reads + clears this file before each user message so Claude
+      // sees WhatsApp messages automatically without manual polling.
+      appendQueueFile(jid, safeName(name), ts, text, id, hasImage, hasDocument, hasAudio, hasVideo)
+
       // ── Inject into Claude's context (push — works for built-in plugins) ──
       mcp.notification({
         method: 'notifications/claude/channel',
@@ -665,6 +670,21 @@ function mentionsBot(msg: any): boolean {
 // ─────────────────────────────────────────────────────────────────────────────
 // Security & formatting helpers
 // ─────────────────────────────────────────────────────────────────────────────
+
+const QUEUE_FILE = join(STATE_DIR, 'incoming.txt')
+
+function appendQueueFile(
+  jid: string, name: string, ts: string, text: string, id: string,
+  hasImage: boolean, hasDocument: boolean, hasAudio: boolean, hasVideo: boolean,
+) {
+  try {
+    const time = ts.replace('T', ' ').replace(/\.\d+Z$/, ' UTC')
+    const media = [hasImage && '[image]', hasDocument && '[document]', hasAudio && '[audio]', hasVideo && '[video]']
+      .filter(Boolean).join(' ')
+    const line = `[WhatsApp ${time} from ${name} (${jid}) id:${id}]: ${text || media || '[media]'}\n`
+    appendFileSync(QUEUE_FILE, line, 'utf8')
+  } catch { /* best effort */ }
+}
 
 /** Strip any WhatsApp JID suffix, leaving the bare local-part (phone or lid number). */
 function jidLocal(jid: string): string {
