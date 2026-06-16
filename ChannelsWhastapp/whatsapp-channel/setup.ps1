@@ -190,10 +190,25 @@ Get-Content $EnvFile | ForEach-Object {
 $EVO = $envMap['EVOLUTION_API_URL']; $KEY = $envMap['EVOLUTION_API_KEY']; $INST = $envMap['INSTANCE_NAME']
 try {
   $resp = Invoke-RestMethod -Uri "$EVO/instance/fetchInstances" -Headers @{ apikey = $KEY } -TimeoutSec 8
-  $me = $resp | Where-Object { $_.name -eq $INST -or $_.instance.instanceName -eq $INST } | Select-Object -First 1
-  $state = if ($me.connectionStatus) { $me.connectionStatus } elseif ($me.instance.state) { $me.instance.state } else { 'unknown' }
-  if ($state -eq 'open') { Ok "Evolution reachable; instance '$INST' state=open" }
-  else { Warn "Evolution reachable but '$INST' state=$state (need 'open' - scan the QR in Evolution)" }
+  $items = @($resp)   # normalize single-object or array responses
+  $me = $null
+  foreach ($it in $items) {
+    $name = $it.name; if (-not $name) { $name = $it.instanceName }; if (-not $name) { $name = $it.instance.instanceName }
+    if ($name -eq $INST) { $me = $it; break }
+  }
+  if (-not $me) {
+    Warn "Instance '$INST' not found in fetchInstances response. Instances present: $(@($items | ForEach-Object { $_.name; $_.instanceName; $_.instance.instanceName } | Where-Object { $_ }) -join ', ')"
+  } else {
+    # Connection state lives under different field names across Evolution versions.
+    $state = $me.connectionStatus; if (-not $state) { $state = $me.state }
+    if (-not $state) { $state = $me.status }; if (-not $state) { $state = $me.connectionState }
+    if (-not $state) { $state = $me.instance.state }; if (-not $state) { $state = $me.instance.status }
+    if (-not $state) { $state = $me.instance.connectionStatus }
+    if (-not $state) { $state = 'unknown' }
+    if ($state -eq 'open') { Ok "Evolution reachable; instance '$INST' state=open (WhatsApp linked)" }
+    elseif ($state -eq 'unknown') { Warn "Evolution reachable; instance '$INST' found but state field not recognized. Check the Evolution Manager UI — if it shows 'Disconnect', you're connected and good to go." }
+    else { Warn "Evolution reachable but '$INST' state=$state (need 'open' - scan the QR in Evolution)" }
+  }
 } catch {
   Warn "Could not reach $EVO/instance/fetchInstances : $($_.Exception.Message)"
   Info "Is Docker up? Try:  docker ps | findstr evolution"
