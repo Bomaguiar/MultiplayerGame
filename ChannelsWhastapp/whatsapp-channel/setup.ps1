@@ -4,7 +4,7 @@
   Install + configure the whatsapp-channel Claude Code plugin (Windows / PowerShell).
 
 .DESCRIPTION
-  One-shot, idempotent setup. Run it as many times as you like — it only fills gaps.
+  One-shot, idempotent setup. Run it as many times as you like - it only fills gaps.
   Steps:
     1. Copy plugin (server.ts, package.json) into the Claude Code plugin cache
     2. bun install the dependency
@@ -12,7 +12,7 @@
     4. Merge the plugin registration + permissions into ~/.claude/settings.json (backed up)
     5. Check Evolution API is reachable and the instance is connected
     6. Smoke-test the plugin boot
-  Nothing here talks to WhatsApp — that's the manual test sequence in TESTING.md.
+  Nothing here talks to WhatsApp - that's the manual test sequence in TESTING.md.
 
 .PARAMETER Verify
   Skip writing anything; just run the health checks (steps 5-6 + config presence).
@@ -41,7 +41,7 @@ function Write-TextNoBom($path, $text){
   [System.IO.File]::WriteAllText($path, $text, $enc)
 }
 
-# ── Paths ────────────────────────────────────────────────────────────────────
+# -- Paths --------------------------------------------------------------------
 $SrcDir   = Join-Path $PSScriptRoot '2.0.0'
 $StateSrc = Join-Path $PSScriptRoot 'channel-state'
 $Cache    = Join-Path $env:USERPROFILE '.claude\plugins\cache\local\whatsapp-channel\2.0.0'
@@ -59,7 +59,7 @@ if (-not (Test-Path (Join-Path $SrcDir 'server.ts'))) {
   Die "Can't find 2.0.0\server.ts next to this script. Run it from ChannelsWhastapp\whatsapp-channel\."
 }
 
-# ── Tool checks ──────────────────────────────────────────────────────────────
+# -- Tool checks --------------------------------------------------------------
 $bun = Get-Command bun -ErrorAction SilentlyContinue
 if (-not $bun) { Die "bun is not on PATH. Install Bun first: https://bun.sh" }
 
@@ -82,7 +82,7 @@ if (-not $Verify) {
   New-Item -ItemType Directory -Force -Path (Join-Path $StateDir 'inbox') | Out-Null
 
   if (Test-Path $EnvFile) {
-    Warn ".env already exists — leaving it untouched. Delete it to reconfigure."
+    Warn ".env already exists - leaving it untouched. Delete it to reconfigure."
   } else {
     Info "Answer a few questions (press Enter to accept the [default])."
     $url   = Read-Host "Evolution API URL [http://localhost:8080]"
@@ -115,7 +115,7 @@ RICH_TEXT=on
   }
 
   if (Test-Path $AccFile) {
-    Warn "access.json already exists — leaving it untouched."
+    Warn "access.json already exists - leaving it untouched."
   } else {
     # Build allowFrom from the phones we just stored in .env
     $allowList = @()
@@ -126,14 +126,15 @@ RICH_TEXT=on
     $acc = [ordered]@{
       allowFrom      = @($allowList)
       sessionActive  = $false
-      ackEmoji       = "👁️"
       replyToMode    = "off"
       textChunkLimit = 4096
       chunkMode      = "newline"
       groups         = @{}
     }
+    # ackEmoji intentionally omitted -> the plugin defaults it to the eye emoji,
+    # keeping this script pure ASCII (Windows PowerShell 5.1 reads .ps1 as ANSI).
     Write-TextNoBom $AccFile ($acc | ConvertTo-Json -Depth 6)
-    Ok "Wrote $AccFile (sessionActive=false — send the start keyword to begin)"
+    Ok "Wrote $AccFile (sessionActive=false - send the start keyword to begin)"
   }
 
   Step 4 "Register in settings.json"
@@ -181,7 +182,7 @@ RICH_TEXT=on
 
 # =============================================================================
 Step 5 "Check Evolution API"
-if (-not (Test-Path $EnvFile)) { Die "No .env at $EnvFile — run without -Verify first." }
+if (-not (Test-Path $EnvFile)) { Die "No .env at $EnvFile - run without -Verify first." }
 $envMap = @{}
 Get-Content $EnvFile | ForEach-Object {
   if ($_ -match '^\s*(\w+)\s*=\s*(.*)$') { $envMap[$matches[1]] = $matches[2].Trim() }
@@ -192,7 +193,7 @@ try {
   $me = $resp | Where-Object { $_.name -eq $INST -or $_.instance.instanceName -eq $INST } | Select-Object -First 1
   $state = if ($me.connectionStatus) { $me.connectionStatus } elseif ($me.instance.state) { $me.instance.state } else { 'unknown' }
   if ($state -eq 'open') { Ok "Evolution reachable; instance '$INST' state=open" }
-  else { Warn "Evolution reachable but '$INST' state=$state (need 'open' — scan the QR in Evolution)" }
+  else { Warn "Evolution reachable but '$INST' state=$state (need 'open' - scan the QR in Evolution)" }
 } catch {
   Warn "Could not reach $EVO/instance/fetchInstances : $($_.Exception.Message)"
   Info "Is Docker up? Try:  docker ps | findstr evolution"
@@ -208,7 +209,7 @@ try {
   if (-not $p.HasExited) { $p.Kill() }
   $log = if (Test-Path $bootErr) { Get-Content $bootErr -Raw } else { '' }
   if ($log -match 'MCP connected') { Ok "Plugin boots and connects MCP" }
-  elseif ($log -match 'EVOLUTION_API_KEY is empty') { Warn ".env didn't load — check $EnvFile" }
+  elseif ($log -match 'EVOLUTION_API_KEY is empty') { Warn ".env didn't load - check $EnvFile" }
   else { Warn "Boot log didn't show 'MCP connected':`n$log" }
 } catch { Warn "Smoke test could not run: $_" }
 Remove-Item $bootErr,$bootOut -ErrorAction SilentlyContinue
