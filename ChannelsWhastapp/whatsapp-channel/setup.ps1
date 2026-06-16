@@ -206,7 +206,7 @@ try {
     if (-not $state) { $state = $me.instance.connectionStatus }
     if (-not $state) { $state = 'unknown' }
     if ($state -eq 'open') { Ok "Evolution reachable; instance '$INST' state=open (WhatsApp linked)" }
-    elseif ($state -eq 'unknown') { Warn "Evolution reachable; instance '$INST' found but state field not recognized. Check the Evolution Manager UI — if it shows 'Disconnect', you're connected and good to go." }
+    elseif ($state -eq 'unknown') { Warn "Evolution reachable; instance '$INST' found but state field not recognized. Check the Evolution Manager UI - if it shows 'Disconnect', you're connected and good to go." }
     else { Warn "Evolution reachable but '$INST' state=$state (need 'open' - scan the QR in Evolution)" }
   }
 } catch {
