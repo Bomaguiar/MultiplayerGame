@@ -1,0 +1,19 @@
+{
+  "channelsEnabled": true,
+  "enabledPlugins": {
+    "whatsapp-channel@local": true
+  },
+  "permissions": {
+    "allow": [
+      "mcp__plugin_whatsapp_channel_whatsapp_channel__reply_whatsapp",
+      "mcp__plugin_whatsapp_channel_whatsapp_channel__send_reaction",
+      "mcp__plugin_whatsapp_channel_whatsapp_channel__download_media",
+      "mcp__plugin_whatsapp_channel_whatsapp_channel__send_presence",
+      "mcp__plugin_whatsapp_channel_whatsapp_channel__edit_message",
+      "mcp__plugin_whatsapp_channel_whatsapp_channel__delete_message",
+      "mcp__plugin_whatsapp_channel_whatsapp_channel__mark_read",
+      "mcp__plugin_whatsapp_channel_whatsapp_channel__get_chat_info",
+      "mcp__plugin_whatsapp_channel_whatsapp_channel__get_session_status"
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "allowFrom": ["<PEDRO_PHONE>", "<ILYA_PHONE>"],
+  "sessionActive": false,
+  "ackEmoji": "👁️",
+  "replyToMode": "off",
+  "textChunkLimit": 4096,
+  "chunkMode": "newline",
+  "groups": {
+    "120363000000000000@g.us": {
+      "requireMention": true,
+      "allowFrom": []
+    }
+  }
+}

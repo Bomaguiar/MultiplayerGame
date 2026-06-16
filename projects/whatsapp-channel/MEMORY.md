@@ -49,10 +49,20 @@ WSL2 NAT blocks Docker→Windows traffic. Polling flips the direction to Windows
 └── package.json
 ```
 
+## Built Plugin
+Source lives in this repo at `ChannelsWhastapp/whatsapp-channel/` ("ultimate" build,
+full Telegram feature parity). Copy `2.0.0/` into the Claude Code plugin cache and the
+`channel-state/` examples into `~/.claude/channels/whatsapp/`. See that folder's README.
+
 ## Tools Exposed to Claude
-- `reply_whatsapp(phone, text, reply_to_message_id?)` 
-- `send_reaction(phone, message_id, emoji)`
-- `download_media(message_id, phone)`
+- `reply_whatsapp(chat_id|phone, text, reply_to_message_id?, file_path?)` — auto-chunk + attachments
+- `send_reaction(message_id, emoji, chat_id?)`
+- `download_media(message_id)` — image/doc/audio/video
+- `send_presence(chat_id, presence)` — typing indicator
+- `edit_message(chat_id, message_id, text)`
+- `delete_message(chat_id, message_id)`
+- `mark_read(message_id)`
+- `get_chat_info(chat_id)`
 - `get_session_status()`
 
 ## Security Model
@@ -63,11 +73,11 @@ WSL2 NAT blocks Docker→Windows traffic. Polling flips the direction to Windows
 - Orphan watchdog: shuts down if Claude Code dies
 
 ## Build Status
-- [ ] Create state directories
-- [ ] Write .env and access.json
-- [ ] Write server.ts (full spec in whatsapp-claude-channel.md)
-- [ ] Register in settings.json
-- [ ] Test sequence (5 steps)
+- [x] Write server.ts (built in repo: ChannelsWhastapp/whatsapp-channel/2.0.0/) — type-checks clean, boots OK
+- [x] Provide .env / access.json examples (channel-state/)
+- [x] Provide settings.json registration snippet (settings.snippet.json)
+- [ ] Deploy: copy into ~/.claude plugin cache + channel state on Pedro's machine
+- [ ] Test sequence (5 steps) against live Evolution API / PedroW instance
 
 ## Broken Components to Remove
 - daemon.mjs — do NOT restart, legacy
