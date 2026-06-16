@@ -136,6 +136,16 @@ let seenIds = new Set<string>()
 // Skip the very first poll's backlog so we don't replay old history on startup.
 let primed = false
 
+// Pending message buffer — filled by the poller; drained by get_pending_messages.
+// Used as the pull-based fallback since claude/channel push notifications are
+// only honoured for built-in plugins, not user-registered MCPs.
+type PendingMsg = {
+  chat_id: string; phone: string; name: string; message_id: string
+  ts: string; text: string; is_group: boolean
+  has_image: boolean; has_document: boolean; has_audio: boolean; has_video: boolean
+}
+const pendingMessages: PendingMsg[] = []
+
 // ─────────────────────────────────────────────────────────────────────────────
 // MCP server
 // ─────────────────────────────────────────────────────────────────────────────
@@ -295,6 +305,14 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
       description: 'Report whether the WhatsApp session is active, the allowlist, and active chats this session.',
       inputSchema: { type: 'object', properties: {} },
     },
+    {
+      name: 'get_pending_messages',
+      description:
+        'Return all WhatsApp messages that arrived since the last call, then clear the buffer. ' +
+        'Call this to check for new messages. Each item has chat_id, phone, name, message_id, ts, text, ' +
+        'and has_image/has_document/has_audio/has_video flags. Use reply_whatsapp to respond.',
+      inputSchema: { type: 'object', properties: {} },
+    },
   ],
 }))
 
@@ -406,6 +424,15 @@ mcp.setRequestHandler(CallToolRequestSchema, async req => {
           number: jid,
         }).catch(() => ({}))
         return ok(JSON.stringify(info, null, 2))
+      }
+
+      // ── Pending messages (pull-based delivery) ────────────────────────────
+      case 'get_pending_messages': {
+        if (pendingMessages.length === 0) {
+          return ok('No new WhatsApp messages.')
+        }
+        const msgs = pendingMessages.splice(0)   // drain the buffer
+        return ok(JSON.stringify(msgs, null, 2))
       }
 
       // ── Status ────────────────────────────────────────────────────────────
@@ -576,7 +603,16 @@ async function poll() {
       activePhones.add(jid)
       ackReact(jid, id)
 
-      // ── Inject into Claude's context ───────────────────────────────────
+      // Buffer for pull-based delivery via get_pending_messages.
+      pendingMessages.push({
+        chat_id: jid, phone: safeName(phone), name: safeName(name),
+        message_id: id, ts, text: text || '',
+        is_group: isGroup, has_image: hasImage,
+        has_document: hasDocument, has_audio: hasAudio, has_video: hasVideo,
+      })
+      if (pendingMessages.length > 50) pendingMessages.shift()  // cap buffer
+
+      // ── Inject into Claude's context (push — works for built-in plugins) ──
       mcp.notification({
         method: 'notifications/claude/channel',
         params: {
