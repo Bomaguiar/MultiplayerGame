@@ -337,12 +337,10 @@ mcp.setRequestHandler(CallToolRequestSchema, async req => {
           for (const chunk of chunks) {
             await evoPost(`/message/sendText/${INSTANCE}`, {
               number: jid,
-              textMessage: {
-                text: chunk,
-                ...(args.reply_to_message_id
-                  ? { quoted: { key: { id: args.reply_to_message_id } } }
-                  : {}),
-              },
+              textMessage: { text: chunk },
+              ...(args.reply_to_message_id
+                ? { options: { quoted: { key: { id: args.reply_to_message_id } } } }
+                : {}),
             })
             sent++
           }
@@ -355,8 +353,10 @@ mcp.setRequestHandler(CallToolRequestSchema, async req => {
         const jid = args.chat_id || msgJid.get(args.message_id) || ''
         assertAllowedChat(jid)
         await evoPost(`/message/sendReaction/${INSTANCE}`, {
-          key: { remoteJid: jid, id: args.message_id, fromMe: false },
-          reaction: args.emoji,
+          reactionMessage: {
+            key: { remoteJid: jid, id: args.message_id, fromMe: false },
+            reaction: args.emoji,
+          },
         })
         return ok(`Reacted with ${args.emoji || '(removed)'}`)
       }
@@ -382,7 +382,8 @@ mcp.setRequestHandler(CallToolRequestSchema, async req => {
         const jid = resolveJid(args.chat_id)
         assertAllowedChat(jid)
         await evoPost(`/chat/sendPresence/${INSTANCE}`, {
-          number: jid, presence: args.presence, delay: 2000,
+          number: jid,
+          options: { presence: args.presence, delay: 2000 },
         })
         return ok(`Presence "${args.presence}" sent to ${jid}`)
       }
@@ -393,7 +394,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async req => {
         assertAllowedChat(jid)
         await evoPost(`/message/updateMessage/${INSTANCE}`, {
           number: jid,
-          textMessage: { text: mdToWhatsApp(args.text) },
+          text: mdToWhatsApp(args.text),
           key: { remoteJid: jid, id: args.message_id, fromMe: true },
         })
         return ok('Message edited')
@@ -413,7 +414,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async req => {
       case 'mark_read': {
         const jid = msgJid.get(args.message_id) ?? ''
         await evoPost(`/chat/markMessageAsRead/${INSTANCE}`, {
-          readMessages: [{ remoteJid: jid, id: args.message_id, fromMe: false }],
+          read_messages: [{ remoteJid: jid, id: args.message_id, fromMe: false }],
         })
         return ok('Marked read')
       }
@@ -508,7 +509,8 @@ async function sendMediaFile(jid: string, filePath: string, caption: string) {
     : ['mp3', 'ogg', 'm4a', 'opus', 'wav'].includes(ext) ? 'audio'
     : 'document'
   await evoPost(`/message/sendMedia/${INSTANCE}`, {
-    number: jid, mediatype, fileName: name, caption, media: b64,
+    number: jid,
+    mediaMessage: { mediatype, fileName: name, caption, media: b64 },
   })
 }
 
@@ -657,8 +659,10 @@ function ackReact(jid: string, id: string) {
   const emoji = access.ackEmoji
   if (!emoji) return
   evoPost(`/message/sendReaction/${INSTANCE}`, {
-    key: { remoteJid: jid, id, fromMe: false },
-    reaction: emoji,
+    reactionMessage: {
+      key: { remoteJid: jid, id, fromMe: false },
+      reaction: emoji,
+    },
   }).catch(() => { /* best effort */ })
 }
 
