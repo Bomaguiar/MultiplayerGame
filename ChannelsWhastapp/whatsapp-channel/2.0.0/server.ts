@@ -337,10 +337,12 @@ mcp.setRequestHandler(CallToolRequestSchema, async req => {
           for (const chunk of chunks) {
             await evoPost(`/message/sendText/${INSTANCE}`, {
               number: jid,
-              text: chunk,
-              ...(args.reply_to_message_id
-                ? { quoted: { key: { id: args.reply_to_message_id } } }
-                : {}),
+              textMessage: {
+                text: chunk,
+                ...(args.reply_to_message_id
+                  ? { quoted: { key: { id: args.reply_to_message_id } } }
+                  : {}),
+              },
             })
             sent++
           }
@@ -391,7 +393,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async req => {
         assertAllowedChat(jid)
         await evoPost(`/message/updateMessage/${INSTANCE}`, {
           number: jid,
-          text: mdToWhatsApp(args.text),
+          textMessage: { text: mdToWhatsApp(args.text) },
           key: { remoteJid: jid, id: args.message_id, fromMe: true },
         })
         return ok('Message edited')
@@ -714,10 +716,13 @@ function extractPhone(msg: any, jid: string, isGroup: boolean): string {
   return jidLocal(isGroup ? (k.participant ?? '') : jid)
 }
 
-/** Turn a phone or partial JID into a full WhatsApp JID. */
+/** Turn a phone or partial JID into a full WhatsApp JID.
+ *  @lid JIDs are converted to @s.whatsapp.net because Evolution API's
+ *  outbound endpoints (sendText, sendReaction, etc.) don't accept @lid. */
 function resolveJid(chatId?: string, phone?: string): string {
   const v = (chatId || phone || '').trim()
   if (!v) throw new Error('No chat_id or phone provided')
+  if (v.endsWith('@lid')) return `${jidLocal(v)}@s.whatsapp.net`
   if (v.includes('@')) return v
   return `${v.replace(/\D/g, '')}@s.whatsapp.net`
 }
