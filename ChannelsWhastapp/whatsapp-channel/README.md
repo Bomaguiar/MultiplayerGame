@@ -60,6 +60,7 @@ Everything from the deep-dive's Telegram analysis, carried over to WhatsApp:
 | Capability | v2.0 spec | This build |
 |---|:--:|:--:|
 | `reply_whatsapp` (auto-chunk) | ✅ | ✅ + **file attachments** (inbox-gated) + **newline-aware chunking** |
+| **Markdown → WhatsApp formatting** (`RICH_TEXT`) | — | ✅ |
 | `send_reaction` | ✅ | ✅ |
 | `download_media` | ✅ | ✅ (image/doc/audio/video) |
 | `get_session_status` | ✅ | ✅ |
@@ -159,6 +160,39 @@ Olá Claude, podes verificar o estado do projeto Oficina Vale?
 ```
 
 ---
+
+## Rich text / formatting
+
+Evolution API has **no "enable rich text" switch** on `sendText` — WhatsApp formatting is
+just raw characters (`*bold*`, `_italic_`, `~strike~`, ` ```mono``` `) and always renders
+*if you send WhatsApp's exact syntax*. The catch: Claude naturally writes **standard
+Markdown** (`**bold**`, `## headings`, `- bullets`, `[text](url)`), which WhatsApp shows
+**literally** — that's the "rich text not working" symptom. (Evolution itself only converts
+Markdown for its *Chatwoot* channel, never for the raw API this plugin uses.)
+
+The fix lives in the plugin: every outbound message is passed through `mdToWhatsApp()`
+before `sendText`, converting Markdown → WhatsApp formatting (same idea as Evolution's
+Chatwoot regex). So you can let Claude write normal Markdown and the recipient sees real
+formatting.
+
+| Claude writes (Markdown) | Recipient sees (WhatsApp) |
+|---|---|
+| `**bold**` / `__bold__` | *bold* |
+| `***x***` | bold + italic |
+| `~~strike~~` | ~strike~ |
+| `## Heading` | *Heading* (bold line) |
+| `- item` / `* item` | • item |
+| `` `code` `` | ```` ```code``` ```` (monospace) |
+| `[label](https://…)` | label (https://…) |
+
+Toggle with `RICH_TEXT` in `.env` (default `on`; set `off` to send byte-for-byte).
+Fenced code blocks and inline code are protected from emphasis rewriting, and the
+converter is collision-safe (e.g. "I have 5 apples" is never mangled).
+
+> Secondary, server-side note: if formatting *still* misbehaves on some recipients, an
+> outdated emulated client can be the cause — set `CONFIG_SESSION_PHONE_VERSION` on the
+> Evolution API container to a current WhatsApp Web version. That's an Evolution-side env
+> var, not part of this plugin.
 
 ## Tools exposed to Claude
 
