@@ -87,6 +87,20 @@ approved (deep-dive §13.3).
 
 ## Install
 
+### Quick path (Windows) — automated
+
+From this folder, run the configurator. It does all four manual steps below
+(copy + `bun install`, write `.env`/`access.json`, merge `settings.json`) and then
+health-checks Evolution and the boot:
+
+```powershell
+pwsh ./setup.ps1            # interactive install + config
+pwsh ./setup.ps1 -Verify    # re-check health only, writes nothing
+```
+
+Then follow [`TESTING.md`](./TESTING.md) for the live phone tests. The manual steps
+below are the same thing by hand.
+
 ### 1. Copy the plugin into the Claude Code cache
 
 ```powershell
