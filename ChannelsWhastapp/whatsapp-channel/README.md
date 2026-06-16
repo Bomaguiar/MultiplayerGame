@@ -208,6 +208,39 @@ converter is collision-safe (e.g. "I have 5 apples" is never mangled).
 > Evolution API container to a current WhatsApp Web version. That's an Evolution-side env
 > var, not part of this plugin.
 
+## Hands-free auto-reply (`/whatsapp-watch`)
+
+Claude Code is **turn-based** — it only acts when a turn is triggered. The
+experimental `claude/channel` push protocol (which would wake Claude on an
+incoming message) is only honored for *built-in* plugins, not user-registered
+MCPs, so a phone message can't wake Claude on its own. Two delivery paths ship
+in this build instead:
+
+1. **Hook injection (passive)** — a `UserPromptSubmit` hook reads a queue file
+   (`~/.claude/channels/whatsapp/incoming.txt`, written by the poller) and
+   injects any pending WhatsApp messages whenever *you* type. Lowest cost; you
+   must send a prompt to trigger it.
+2. **Timer loop (hands-free)** — the `whatsapp-watch` skill drives a recurring
+   poll of `get_pending_messages` and replies to each sender automatically. Leave
+   the Claude window open and it answers your phone on its own.
+
+Install the skill, then start it from Claude:
+
+```powershell
+$dst = "$env:USERPROFILE\.claude\skills\whatsapp-watch"
+New-Item -ItemType Directory -Force -Path $dst | Out-Null
+Copy-Item "skills\whatsapp-watch\SKILL.md" $dst -Force
+```
+
+```
+/whatsapp-watch            # poll every 15s (default)
+/whatsapp-watch every 10s  # snappier; burns more tokens
+```
+
+Stop with `Esc` or `/loop stop`. The loop ticks (and spends tokens) even when
+idle, so don't go below ~10s. The hook and loop coexist: the loop drives
+hands-free replies, the hook still injects if you type yourself.
+
 ## Tools exposed to Claude
 
 | Tool | Purpose |
