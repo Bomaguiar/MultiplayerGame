@@ -87,8 +87,10 @@ if (-not $Verify) {
     Info "Answer a few questions (press Enter to accept the [default])."
     $url   = Read-Host "Evolution API URL [http://localhost:8080]"
     if ([string]::IsNullOrWhiteSpace($url)) { $url = 'http://localhost:8080' }
-    $key   = Read-Host "Evolution API KEY (required)"
-    while ([string]::IsNullOrWhiteSpace($key)) { $key = Read-Host "  -> API key cannot be empty" }
+    Info "Use the INSTANCE token (Evolution Manager > your instance > 'API Key'/'token'),"
+    Info "NOT the global server key. The global key gets 401 on message endpoints."
+    $key   = Read-Host "Evolution INSTANCE token (required)"
+    while ([string]::IsNullOrWhiteSpace($key)) { $key = Read-Host "  -> token cannot be empty" }
     $inst  = Read-Host "Instance name [PedroW]"
     if ([string]::IsNullOrWhiteSpace($inst)) { $inst = 'PedroW' }
     $phones= Read-Host "Allowed phones, comma-separated, no + (e.g. 351915873259)"
@@ -188,30 +190,36 @@ Get-Content $EnvFile | ForEach-Object {
   if ($_ -match '^\s*(\w+)\s*=\s*(.*)$') { $envMap[$matches[1]] = $matches[2].Trim() }
 }
 $EVO = $envMap['EVOLUTION_API_URL']; $KEY = $envMap['EVOLUTION_API_KEY']; $INST = $envMap['INSTANCE_NAME']
+
+# 5a. Connection state via an INSTANCE-scoped endpoint. connectionState accepts the
+# instance token (the global key would 401 on the message endpoints the plugin uses).
 try {
-  $resp = Invoke-RestMethod -Uri "$EVO/instance/fetchInstances" -Headers @{ apikey = $KEY } -TimeoutSec 8
-  $items = @($resp)   # normalize single-object or array responses
-  $me = $null
-  foreach ($it in $items) {
-    $name = $it.name; if (-not $name) { $name = $it.instanceName }; if (-not $name) { $name = $it.instance.instanceName }
-    if ($name -eq $INST) { $me = $it; break }
-  }
-  if (-not $me) {
-    Warn "Instance '$INST' not found in fetchInstances response. Instances present: $(@($items | ForEach-Object { $_.name; $_.instanceName; $_.instance.instanceName } | Where-Object { $_ }) -join ', ')"
-  } else {
-    # Connection state lives under different field names across Evolution versions.
-    $state = $me.connectionStatus; if (-not $state) { $state = $me.state }
-    if (-not $state) { $state = $me.status }; if (-not $state) { $state = $me.connectionState }
-    if (-not $state) { $state = $me.instance.state }; if (-not $state) { $state = $me.instance.status }
-    if (-not $state) { $state = $me.instance.connectionStatus }
-    if (-not $state) { $state = 'unknown' }
-    if ($state -eq 'open') { Ok "Evolution reachable; instance '$INST' state=open (WhatsApp linked)" }
-    elseif ($state -eq 'unknown') { Warn "Evolution reachable; instance '$INST' found but state field not recognized. Check the Evolution Manager UI - if it shows 'Disconnect', you're connected and good to go." }
-    else { Warn "Evolution reachable but '$INST' state=$state (need 'open' - scan the QR in Evolution)" }
-  }
+  $cs = Invoke-RestMethod -Uri "$EVO/instance/connectionState/$INST" -Headers @{ apikey = $KEY } -TimeoutSec 8
+  $state = $cs.instance.state; if (-not $state) { $state = $cs.state }; if (-not $state) { $state = $cs.instance.status }
+  if (-not $state) { $state = 'unknown' }
+  if ($state -eq 'open') { Ok "Evolution reachable; instance '$INST' state=open (WhatsApp linked)" }
+  elseif ($state -eq 'unknown') { Warn "connectionState returned no recognizable state. Check Evolution Manager UI - 'Disconnect' button = connected." }
+  else { Warn "Instance '$INST' state=$state (need 'open' - scan the QR in Evolution)" }
 } catch {
-  Warn "Could not reach $EVO/instance/fetchInstances : $($_.Exception.Message)"
-  Info "Is Docker up? Try:  docker ps | findstr evolution"
+  Warn "connectionState/$INST failed: $($_.Exception.Message). Is Docker up?  docker ps | findstr evolution"
+}
+
+# 5b. Decisive check: hit the SAME message endpoint the plugin polls, with the SAME
+# token. This is what actually 401'd before, so it's the true go/no-go.
+try {
+  $body = @{ where = @{ fromMe = $false }; limit = 1 } | ConvertTo-Json
+  $null = Invoke-RestMethod -Uri "$EVO/chat/findMessages/$INST" -Method Post `
+            -Headers @{ apikey = $KEY; 'Content-Type' = 'application/json' } -Body $body -TimeoutSec 8
+  Ok "findMessages authorized with this token - the plugin can poll messages."
+} catch {
+  $code = $null; try { $code = $_.Exception.Response.StatusCode.value__ } catch {}
+  if ($code -eq 401) {
+    Warn "findMessages returned 401 with this token. You're using the GLOBAL key, not the"
+    Info "INSTANCE token. Fix it:  Evolution Manager > $INST > 'API Key', then re-run with the .env deleted,"
+    Info "or run:  `$f=`"`$env:USERPROFILE\.claude\channels\whatsapp\.env`"; (Get-Content `$f) -replace '^EVOLUTION_API_KEY=.*','EVOLUTION_API_KEY=<INSTANCE_TOKEN>' | Set-Content `$f"
+  } else {
+    Warn "findMessages check failed: $($_.Exception.Message)"
+  }
 }
 
 Step 6 "Smoke-test the plugin boot"

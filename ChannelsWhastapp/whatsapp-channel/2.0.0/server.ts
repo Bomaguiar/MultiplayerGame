@@ -48,9 +48,20 @@ mkdirSync(INBOX_DIR, { recursive: true })
 // ─────────────────────────────────────────────────────────────────────────────
 
 if (existsSync(ENV_FILE)) {
-  for (const line of readFileSync(ENV_FILE, 'utf8').split('\n')) {
-    const m = line.match(/^\s*(\w+)\s*=\s*(.*)$/)
-    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim()
+  // Strip a UTF-8 BOM if Set-Content/editors added one (PowerShell 5.1 does on
+  // -Encoding UTF8); otherwise the first key parses with a hidden ﻿ prefix.
+  const raw = readFileSync(ENV_FILE, 'utf8').replace(/^﻿/, '')
+  for (const rawLine of raw.split('\n')) {
+    const line = rawLine.replace(/\r$/, '')           // CRLF → LF safety
+    if (!line.trim() || line.trim().startsWith('#')) continue
+    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/)
+    if (!m) continue
+    let val = m[2].trim().replace(/\s+#.*$/, '').trim()   // drop trailing comment
+    if ((val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))) {
+      val = val.slice(1, -1)                          // strip surrounding quotes
+    }
+    if (!process.env[m[1]]) process.env[m[1]] = val
   }
 }
 
@@ -487,7 +498,11 @@ async function poll() {
     })
 
     // Evolution returns different shapes across versions — normalise.
+    //   v2 (current)  : { "value": [ ... ], "Count": N }
+    //   some builds   : { "messages": { "records": [ ... ] } }
+    //   older         : { "records": [ ... ] }  or a bare array
     const messages: any[] =
+      data?.value ??
       data?.messages?.records ??
       data?.records ??
       (Array.isArray(data) ? data : [])
@@ -501,9 +516,7 @@ async function poll() {
       if (seenIds.has(id)) continue
 
       const isGroup = jid.endsWith('@g.us')
-      const phone   = isGroup
-        ? (msg.key?.participant ?? '').replace(/@s\.whatsapp\.net$/, '')
-        : jid.replace(/@s\.whatsapp\.net$/, '').replace(/@lid$/, '')
+      const phone   = extractPhone(msg, jid, isGroup)
       const text =
         msg.message?.conversation ??
         msg.message?.extendedTextMessage?.text ??
@@ -534,6 +547,10 @@ async function poll() {
         if (g.allowFrom.length && !g.allowFrom.includes(phone)) continue
         if (g.requireMention && !mentionsBot(msg)) continue
       } else if (!ALLOWED.has(phone)) {
+        // Loud, one-line diagnosis: shows exactly what identifier was extracted
+        // vs. the allowlist, so a @lid (Linked-Device ID) mismatch is obvious.
+        // If you see your message here, add the printed id to ALLOWED_PHONES.
+        log(`Dropped DM: extracted id "${phone}" from ${jid} not in ALLOWED=[${[...ALLOWED].join(', ')}]`)
         continue
       }
 
@@ -613,6 +630,34 @@ function mentionsBot(msg: any): boolean {
 // Security & formatting helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Strip any WhatsApp JID suffix, leaving the bare local-part (phone or lid number). */
+function jidLocal(jid: string): string {
+  return (jid ?? '').replace(/@s\.whatsapp\.net$/, '').replace(/@lid$/, '').replace(/@g\.us$/, '')
+}
+
+/**
+ * Best-effort sender identifier for the allowlist gate.
+ *
+ * WhatsApp now routes some contacts through a "Linked Device ID" (`<n>@lid`)
+ * instead of the phone-number JID (`<phone>@s.whatsapp.net`). When that happens
+ * Baileys/Evolution still carry the real phone number in an alternate key field
+ * (names vary across versions). Prefer any phone-number JID we can find; only
+ * fall back to the lid local-part if none is present. The lid is stable per
+ * contact, so the user can allow-list it directly from the "Dropped DM" log line.
+ */
+function extractPhone(msg: any, jid: string, isGroup: boolean): string {
+  const k = msg.key ?? {}
+  const candidates = isGroup
+    ? [k.participantAlt, k.participantPn, k.senderPn, k.participant]
+    : [k.remoteJidAlt, k.senderPn, k.remoteJidPn, jid]
+  for (const c of candidates) {
+    if (typeof c === 'string' && c.includes('@s.whatsapp.net')) {
+      return c.replace(/@s\.whatsapp\.net$/, '')
+    }
+  }
+  return jidLocal(isGroup ? (k.participant ?? '') : jid)
+}
+
 /** Turn a phone or partial JID into a full WhatsApp JID. */
 function resolveJid(chatId?: string, phone?: string): string {
   const v = (chatId || phone || '').trim()
@@ -626,8 +671,8 @@ function assertAllowedChat(jid: string) {
   if (!jid) throw new Error('Empty destination JID')
   if (activePhones.has(jid)) return
   // Also permit explicitly allow-listed DMs even before first inbound this run.
-  const phone = jid.replace(/@s\.whatsapp\.net$/, '')
-  if (!jid.endsWith('@g.us') && ALLOWED.has(phone)) return
+  // jidLocal() handles both @s.whatsapp.net and @lid local-parts.
+  if (!jid.endsWith('@g.us') && ALLOWED.has(jidLocal(jid))) return
   throw new Error(
     `Security: ${jid} has not delivered an inbound message this session. ` +
     `Cannot send to a chat that hasn't contacted you.`
@@ -791,8 +836,15 @@ setInterval(() => {
 
 log('Starting whatsapp-channel plugin v2.0.0 (ultimate)')
 log(`Instance=${INSTANCE} Allowed=[${[...ALLOWED].join(', ')}] Poll=${POLL_MS}ms`)
+log(`Env file: ${ENV_FILE} (exists=${existsSync(ENV_FILE)})`)
 
-if (!EVO_KEY) log('WARNING: EVOLUTION_API_KEY is empty — set it in .env')
+if (!EVO_KEY) {
+  log(`WARNING: EVOLUTION_API_KEY is empty — set it in ${ENV_FILE}`)
+} else {
+  // Masked confirmation that a key loaded — last 4 chars only.
+  const tail = EVO_KEY.length >= 4 ? EVO_KEY.slice(-4) : '?'
+  log(`Evolution key loaded (len=${EVO_KEY.length}, …${tail}) url=${EVO_URL}`)
+}
 
 await mcp.connect(new StdioServerTransport())
 log('MCP connected — starting poller')
