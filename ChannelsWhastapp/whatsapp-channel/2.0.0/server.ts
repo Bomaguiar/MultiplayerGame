@@ -151,7 +151,7 @@ const pendingMessages: PendingMsg[] = []
 // ─────────────────────────────────────────────────────────────────────────────
 
 const mcp = new Server(
-  { name: 'whatsapp-channel', version: '2.0.0' },
+  { name: 'plugin:whatsapp-channel:whatsapp-channel', version: '2.0.0' },
   {
     capabilities: {
       tools: {},
