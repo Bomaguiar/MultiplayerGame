@@ -1,0 +1,87 @@
+{
+  "project": "construction-whatsapp",
+  "test_command": "npm test",
+  "_note": "Each task is scoped so the build loop can implement + test it in one pass. Order matters: foundations first. Set status back to 'pending' to rebuild a task.",
+  "tasks": [
+    {
+      "id": "T01",
+      "title": "Backend scaffold + health check",
+      "spec": "Stand up the API service (Node/Express or Fastify) with a Postgres connection layer, env config, and a GET /health endpoint returning {status:'ok', db:true}. Include a test runner (jest or vitest) wired to `npm test`.",
+      "acceptance": ["GET /health returns 200 with db connectivity flag", "npm test runs and passes at least one test"],
+      "files_hint": ["construction-platform/api/src/server.*", "construction-platform/api/src/db.*", "construction-platform/api/package.json"],
+      "status": "pending"
+    },
+    {
+      "id": "T02",
+      "title": "Auth + roles (customer/worker/founder)",
+      "spec": "Add a users table and role enum (customer, worker, founder, admin). Phone number is the identity (matches WhatsApp). Implement role lookup by phone and a requireRole() guard. No passwords — identity is proven by the WhatsApp bridge upstream; the API trusts a signed internal token.",
+      "acceptance": ["users table with role column exists via migration", "requireRole() rejects wrong role with 403", "lookup-by-phone returns the user's role"],
+      "files_hint": ["construction-platform/api/src/models/user.*", "construction-platform/api/src/middleware/requireRole.*"],
+      "status": "pending"
+    },
+    {
+      "id": "T03",
+      "title": "Projects, phases, milestones",
+      "spec": "Core domain: Project (name, address, client, status, budget), Phase (belongs to project, ordered), Milestone (belongs to phase, due date, % complete). CRUD endpoints, role-gated: founders write, customers read their own projects, workers read assigned projects.",
+      "acceptance": ["CRUD endpoints for project/phase/milestone return correct status codes", "customer can only read their own project (404/403 otherwise)", "migrations create all three tables"],
+      "files_hint": ["construction-platform/api/src/models/project.*", "construction-platform/api/src/routes/projects.*"],
+      "status": "pending"
+    },
+    {
+      "id": "T04",
+      "title": "Daily site log + photo attachments",
+      "spec": "Workers post a daily log per project: text note, weather, crew count, hours, and 0..N photo references (media stored via the WhatsApp media path / object storage, log keeps the URL/key). Customers and founders can read logs for their projects.",
+      "acceptance": ["worker can create a daily log with photo refs", "logs are listable per project, newest first", "customer reading another project's logs is denied"],
+      "files_hint": ["construction-platform/api/src/models/dailyLog.*", "construction-platform/api/src/routes/logs.*"],
+      "status": "pending"
+    },
+    {
+      "id": "T05",
+      "title": "Tasks + assignment + status",
+      "spec": "Work items assigned to workers within a project/phase: title, assignee, due date, status (todo/doing/blocked/done), priority. Workers update status; founders assign. Status changes are timestamped for an audit trail.",
+      "acceptance": ["task can be created, assigned, and transitioned through statuses", "status history is recorded", "only assignee or founder can change a task"],
+      "files_hint": ["construction-platform/api/src/models/task.*", "construction-platform/api/src/routes/tasks.*"],
+      "status": "pending"
+    },
+    {
+      "id": "T06",
+      "title": "Materials & procurement requests",
+      "spec": "Workers raise material requests (item, qty, project, urgency). Founders approve/deny. Approved requests become a procurement list with status (requested/ordered/delivered).",
+      "acceptance": ["worker creates a material request", "founder approval moves it to ordered", "procurement list filters by status and project"],
+      "files_hint": ["construction-platform/api/src/models/material.*", "construction-platform/api/src/routes/materials.*"],
+      "status": "pending"
+    },
+    {
+      "id": "T07",
+      "title": "Budget, change orders & approvals",
+      "spec": "Project budget with line items, actuals vs. estimate. Change orders (description, cost delta, requires customer approval). Customer approve/reject is recorded with timestamp and becomes part of the project's financial record.",
+      "acceptance": ["budget shows estimate vs actual per line", "change order requires explicit customer approval before affecting budget", "rejected change orders do not alter the budget"],
+      "files_hint": ["construction-platform/api/src/models/budget.*", "construction-platform/api/src/routes/changeOrders.*"],
+      "status": "pending"
+    },
+    {
+      "id": "T08",
+      "title": "Notifications & escalation engine",
+      "spec": "An event bus that emits domain events (log posted, task blocked, change order pending, milestone due/overdue) and routes them to the right WhatsApp recipients by role and project membership. Pluggable sender interface so the WhatsApp bridge is the first implementation.",
+      "acceptance": ["emitting an event resolves the correct recipient set by role+project", "overdue milestone triggers an escalation event", "sender interface is mockable in tests"],
+      "files_hint": ["construction-platform/api/src/events/*", "construction-platform/api/src/notify/*"],
+      "status": "pending"
+    },
+    {
+      "id": "T09",
+      "title": "WhatsApp command router (role-aware menus)",
+      "spec": "Map inbound WhatsApp commands to API calls, gated by the sender's role and the configurator's per-contact menu. Customers: 'estado', 'fotos', 'aprovar'. Workers: 'log', 'tarefa', 'material'. Founders: 'painel', 'aprovacoes', 'equipa'. Reuses the existing watcher + configurator allowlist/menu config.",
+      "acceptance": ["a worker 'log' command creates a daily log via the API", "a customer cannot invoke a worker-only command", "menu shown matches the contact's configured permission"],
+      "files_hint": ["construction-platform/router/*", "ChannelsWhastapp/whatsapp-channel/watcher/watcher.py"],
+      "status": "pending"
+    },
+    {
+      "id": "T10",
+      "title": "Founder dashboard summary (AI rollup)",
+      "spec": "A 'painel' command returns a concise health summary per project: % complete, overdue tasks, pending approvals, budget variance, last activity. Aggregates from the API; the natural-language phrasing is produced by a cheap model call.",
+      "acceptance": ["dashboard endpoint aggregates the right metrics per project", "summary degrades gracefully when a project has no data", "founder-only access enforced"],
+      "files_hint": ["construction-platform/api/src/routes/dashboard.*"],
+      "status": "pending"
+    }
+  ]
+}
