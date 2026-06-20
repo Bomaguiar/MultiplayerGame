@@ -46,11 +46,11 @@ async function render() {
     <h1>${esc(p.name)}</h1>
     <div class="meta">📍 ${esc(p.address || '—')} · estado <b>${esc(p.status)}</b> · orçamento €${Number(p.budget).toLocaleString('pt-PT')}</div>`;
 
-  await Promise.all([loadMilestones(), loadLogs(), loadTasks(), loadMaterials()]);
+  await Promise.all([loadBudget(), loadMilestones(), loadLogs(), loadTasks(), loadMaterials(), loadChangeOrders()]);
 }
 
 function clearCards() {
-  ['milestones', 'logs', 'tasks', 'materials'].forEach((id) => ($(id).innerHTML = ''));
+  ['budget', 'milestones', 'logs', 'tasks', 'materials', 'changeOrders'].forEach((id) => ($(id).innerHTML = ''));
 }
 
 async function loadMilestones() {
@@ -117,6 +117,40 @@ async function loadMaterials() {
   $('materials').innerHTML = html;
 }
 
+async function loadBudget() {
+  if (me.role === 'worker') { $('budget').innerHTML = ''; return; }
+  const { data, status } = await api('GET', `/projects/${projectId}/budget`);
+  if (status !== 200 || !data) { $('budget').innerHTML = ''; return; }
+  const fmt = (v) => `€${Number(v).toLocaleString('pt-PT')}`;
+  $('budget').innerHTML = `
+    <h2>💰 Orçamento</h2>
+    <div class="budget-grid">
+      <div class="budget-item"><span class="budget-val">${fmt(data.current_budget)}</span><span class="dim">Orçamento actual</span></div>
+      <div class="budget-item"><span class="budget-val">${fmt(data.approved_changes)}</span><span class="dim">Alterações aprovadas</span></div>
+      <div class="budget-item"><span class="budget-val pending">${fmt(data.pending_changes)}</span><span class="dim">${data.pending_count} pendente(s)</span></div>
+    </div>`;
+}
+
+async function loadChangeOrders() {
+  const { data: orders } = await api('GET', `/projects/${projectId}/change-orders`);
+  let html = '<h2>📋 Alterações ao Projecto</h2>';
+  if (me.role === 'founder') {
+    html += `<button class="act" onclick="proposeChange()">+ Nova alteração</button>`;
+  }
+  for (const co of orders || []) {
+    const canDecide = me.role === 'customer' && co.status === 'proposed';
+    const costSign = Number(co.cost_delta) >= 0 ? '+' : '';
+    html += `<div class="row mat">
+      <span class="grow">${esc(co.title)}<br><span class="dim">${esc(co.description || '')}</span></span>
+      <span class="prio">${costSign}€${Number(co.cost_delta).toLocaleString('pt-PT')}${co.days_delta ? ` · ${co.days_delta > 0 ? '+' : ''}${co.days_delta}d` : ''}</span>
+      <span class="status s-${co.status === 'proposed' ? 'requested' : co.status === 'approved' ? 'done' : 'denied'}">${co.status}</span>
+      ${canDecide ? `<button class="act sm ok" onclick="decideCO(${co.id},'approved')">aprovar</button>
+                     <button class="act sm no" onclick="decideCO(${co.id},'rejected')">rejeitar</button>` : ''}
+    </div>`;
+  }
+  $('changeOrders').innerHTML = html;
+}
+
 // ── Actions (real API calls, role-gated server-side) ─────────────────────────
 async function advance(id, status) { await api('PATCH', `/tasks/${id}/status`, { status }); await render(); }
 async function decide(id, decision) { await api('PATCH', `/materials/${id}/decision`, { decision }); await render(); }
@@ -131,8 +165,18 @@ async function requestMaterial() {
   await api('POST', `/projects/${projectId}/materials`, { item, qty, urgency: 'normal' });
   await render();
 }
+async function decideCO(id, decision) { await api('PATCH', `/change-orders/${id}/decision`, { decision }); await render(); }
+async function proposeChange() {
+  const title = prompt('Título da alteração:'); if (!title) return;
+  const desc = prompt('Descrição:', '') || '';
+  const costDelta = Number(prompt('Custo adicional (€):', '0')) || 0;
+  const daysDelta = Number(prompt('Dias adicionais:', '0')) || 0;
+  await api('POST', `/projects/${projectId}/change-orders`, { title, description: desc, costDelta, daysDelta });
+  await render();
+}
 window.advance = advance; window.decide = decide;
 window.postLog = postLog; window.requestMaterial = requestMaterial;
+window.decideCO = decideCO; window.proposeChange = proposeChange;
 
 function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 

@@ -10,6 +10,7 @@ import { createLog } from './models/dailyLog.js';
 import { createTask, setStatus } from './models/task.js';
 import { createRequest } from './models/material.js';
 import { createUser } from './models/user.js';
+import { createChangeOrder } from './models/changeOrder.js';
 
 const ACTORS = {
   founder:  { phone: '351900000001', name: 'Pedro' },
@@ -60,6 +61,12 @@ export async function demoRoutes(app) {
     await createRequest({
       projectId: project.id, requestedBy: ACTORS.worker.phone,
       item: 'Cement', qty: 20, unit: 'bags', urgency: 'high',
+    });
+
+    await createChangeOrder({
+      projectId: project.id, title: 'Upgrade to polished concrete floor',
+      description: 'Client requested polished concrete instead of standard screed. Adds 3 days.',
+      costDelta: 4500, daysDelta: 3, proposedBy: ACTORS.founder.phone,
     });
 
     return { seeded: true, projectId: project.id };

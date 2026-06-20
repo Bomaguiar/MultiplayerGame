@@ -50,5 +50,11 @@ main { max-width: 1100px; margin: 20px auto; padding: 0 16px; }
 .act.ok { background: #1b7a43; } .act.no { background: #b3261e; }
 .act:hover { opacity: .9; }
 
+.budget-card { margin-bottom: 16px; }
+.budget-grid { display: flex; gap: 24px; flex-wrap: wrap; }
+.budget-item { display: flex; flex-direction: column; }
+.budget-val { font-size: 22px; font-weight: 700; color: #2b5876; }
+.budget-val.pending { color: #8a6d00; }
+
 .footer { text-align: center; color: #8a94a6; font-size: 12px; padding: 18px; }
 .footer code { background: #e3e7ee; padding: 1px 5px; border-radius: 4px; }
