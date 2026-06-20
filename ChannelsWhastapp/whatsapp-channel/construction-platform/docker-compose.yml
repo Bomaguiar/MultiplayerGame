@@ -1,19 +1,23 @@
-# Construction WhatsApp Platform — runnable demo stack.
+# Construction WhatsApp Platform — runnable stack (demo or pilot).
 #
 #   docker compose up --build
 #   → Postgres boots, API runs migrations, dashboard at http://localhost:4000/app/
 #
+# Out of the box this runs in DEMO_MODE with seeded data. For a real pilot,
+# create a `.env` file next to this one (see .env.example) to set a strong
+# INTERNAL_TOKEN_SECRET, turn DEMO_MODE off, and optionally add ANTHROPIC_API_KEY.
 services:
   db:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: construction
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d construction"]
       interval: 3s
@@ -23,9 +27,10 @@ services:
   api:
     build: ./api
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/construction
-      INTERNAL_TOKEN_SECRET: demo-secret-change-me
-      DEMO_MODE: "1"
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/construction
+      INTERNAL_TOKEN_SECRET: ${INTERNAL_TOKEN_SECRET:-demo-secret-change-me}
+      DEMO_MODE: ${DEMO_MODE:-1}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       PORT: "4000"
       HOST: "0.0.0.0"
     ports:
@@ -33,6 +38,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   pgdata:

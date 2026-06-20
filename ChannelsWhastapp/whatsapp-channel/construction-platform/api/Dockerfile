@@ -3,9 +3,9 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Install deps first for layer caching.
-COPY package.json ./
-RUN npm install --omit=dev
+# Install deps first for layer caching. Use the lockfile for reproducible builds.
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
 
 # App source.
 COPY src ./src
