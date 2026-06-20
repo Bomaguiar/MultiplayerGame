@@ -1,12 +1,39 @@
 # Running the demo on your own machine
 
-Two ways to see the platform working — both run on **your** infrastructure, no
+Three ways to see the platform working — all run on **your** infrastructure, no
 external services.
 
-## Option A — Full stack (Docker: real Postgres + API + dashboard)
+## Option A — No Docker needed (recommended for older Macs)
 
-This is the production-shaped artifact: a real Postgres database, the API
-running migrations on boot, and the browser dashboard.
+Just Node.js — no Docker, no Postgres. Everything runs in memory. Perfect for
+any machine that has Node.js 18+.
+
+```bash
+cd ChannelsWhastapp/whatsapp-channel/construction-platform/api
+npm install
+npm run demo:server
+```
+
+Then open **http://localhost:4000/app/** in your browser.
+
+Data lives in memory and resets when you restart. This is the fastest way to
+see the dashboard.
+
+### Install Node.js (if you don't have it)
+
+**Mac (Homebrew):**
+```bash
+brew install node
+```
+
+**Mac (direct download):**
+Go to https://nodejs.org/ and download the LTS version.
+
+## Option B — Full stack (Docker: real Postgres + API + dashboard)
+
+The production-shaped artifact: a real Postgres database, the API running
+migrations on boot, and the browser dashboard. **Requires Docker Desktop
+(macOS Sonoma or newer).**
 
 ```bash
 cd ChannelsWhastapp/whatsapp-channel/construction-platform
@@ -15,42 +42,48 @@ docker compose up --build
 
 Then open **http://localhost:4000/app/** in your browser.
 
-You'll land on the **founder** view of project *Vila Sol*. Use the buttons in the
-top-right to switch identity:
-
-- **👤 Maria (cliente)** — read-only transparency: project status, milestones,
-  daily photos/logs, tasks, materials. She sees only her own project.
-- **👷 João (obra)** — can post a daily log, request materials, and advance his
-  assigned task (todo → doing → done).
-- **🧭 Pedro (gestor)** — can approve/deny material requests (watch *Cement*
-  move `requested → ordered`).
-
-Every button is a real, role-gated API call — try acting as Maria and you'll see
-the worker/founder actions simply aren't offered (and the server would reject
-them anyway). Data persists in Postgres across restarts.
-
+Data persists in Postgres across restarts.
 Stop with `Ctrl+C`; wipe data with `docker compose down -v`.
 
-## Option B — Headless transcript (no Docker)
+## Option C — Headless transcript (no Docker)
 
 A scripted end-to-end run against an in-memory Postgres that prints every
 request and response:
 
 ```bash
-cd construction-platform/api
+cd ChannelsWhastapp/whatsapp-channel/construction-platform/api
 npm install
 npm run demo
 ```
 
 You'll see 15 steps covering project creation, logs+photos, customer
-transparency, the privacy gate (a stranger gets `404`), task assignment + audit
-trail, and material approval — each with its live HTTP status.
+transparency, the privacy gate, task assignment + audit trail, and material
+approval — each with its live HTTP status.
+
+## What you'll see in the dashboard
+
+The demo seeds real data from the **Santa Rita - Summer 2026** ClickUp workspace:
+
+- **🧭 Pedro (gestor)** — budget overview, 19 real ClickUp tasks grouped by area
+  (house exterior, main living room, kitchen, building systems), 13 material
+  requests from the real materials spreadsheet, 2 change orders pending customer
+  approval. Can propose changes and approve materials.
+
+- **👤 Ilya (cliente)** — read-only transparency: project status, milestones,
+  daily photos/logs, tasks, materials. Can approve or reject change orders
+  (the money decisions). Cannot see worker actions.
+
+- **👷 Franek (obra)** — can post daily logs, request materials, advance his
+  assigned tasks (todo → doing → done). Cannot approve or see budget.
+
+Every button is a real, role-gated API call — the server rejects unauthorized
+actions regardless of what the UI shows.
 
 ## Run the tests
 
 ```bash
-cd construction-platform/api
-npm test        # 29 tests, all green
+cd ChannelsWhastapp/whatsapp-channel/construction-platform/api
+npm test
 ```
 
 ## How this maps to WhatsApp
@@ -60,3 +93,9 @@ production the identity tokens come from the **watcher** (signed from your
 unofficial WhatsApp bridge), not the demo login — see
 [`BLUEPRINT.md`](./BLUEPRINT.md) §6. The `/demo/*` routes and the dashboard are
 gated by `DEMO_MODE=1` and never ship to production.
+
+## ClickUp integration
+
+Tasks synced from ClickUp show a **↗** link that opens directly in ClickUp.
+The sync is bidirectional — status changes in the platform can be pushed back
+to ClickUp via the `/clickup/sync` API.
