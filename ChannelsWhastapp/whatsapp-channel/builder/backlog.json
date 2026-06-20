@@ -33,7 +33,7 @@
       "spec": "Workers post a daily log per project: text note, weather, crew count, hours, and 0..N photo references (media stored via the WhatsApp media path / object storage, log keeps the URL/key). Customers and founders can read logs for their projects.",
       "acceptance": ["worker can create a daily log with photo refs", "logs are listable per project, newest first", "customer reading another project's logs is denied"],
       "files_hint": ["construction-platform/api/src/models/dailyLog.*", "construction-platform/api/src/routes/logs.*"],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "T05",

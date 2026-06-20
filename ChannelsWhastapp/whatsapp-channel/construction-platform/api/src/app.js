@@ -8,6 +8,7 @@ import Fastify from 'fastify';
 import { checkDb } from './db.js';
 import { authDecorator } from './auth.js';
 import { projectRoutes } from './routes/projects.js';
+import { logRoutes } from './routes/logs.js';
 
 export function buildApp(opts = {}) {
   const app = Fastify({ logger: opts.logger ?? false });
@@ -24,6 +25,7 @@ export function buildApp(opts = {}) {
 
   // Domain routes.
   app.register(projectRoutes);
+  app.register(logRoutes);
 
   return app;
 }
