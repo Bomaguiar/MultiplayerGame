@@ -2,11 +2,17 @@
 
 import { buildApp } from './app.js';
 import { closePool } from './db.js';
+import { initBrainModel } from './brain/claudeClient.js';
 
 const PORT = Number(process.env.PORT || 4000);
 const HOST = process.env.HOST || '0.0.0.0';
 
+// Opt-in: wire Claude into the brain if ANTHROPIC_API_KEY is set; otherwise the
+// deterministic fallbacks stay in effect.
+const aiOn = initBrainModel();
+
 const app = buildApp({ logger: true });
+app.log?.info?.(`brain model: ${aiOn ? 'Claude (live)' : 'deterministic fallback'}`);
 
 async function start() {
   try {

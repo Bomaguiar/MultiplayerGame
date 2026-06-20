@@ -77,10 +77,15 @@ npm run demo:server # http://localhost:4000/app/  (no Docker)
 Self-building loop: `cd ../builder && python builder.py --once` (or use the
 `self-build` skill).
 
+## AI Brain (Claude wiring)
+- `brain/claudeClient.js` — `initBrainModel()` installs a Claude-backed client
+  into the `brain/model.js` seam IF `ANTHROPIC_API_KEY` is set. Off by default →
+  deterministic fallbacks; tests/demo unaffected. Wired at boot in `server.js`.
+- Uses `@anthropic-ai/sdk`, model `claude-haiku-4-5` (cheap; override `BRAIN_MODEL`),
+  `max_tokens` 512 (override `BRAIN_MAX_TOKENS`). Set the key in `.env`.
+
 ## Open Threads / Next
 - Pedro needs Node.js installed on the Mac to run locally.
-- Wire a real model client into `brain/model.js` (Claude) when ready — today it's
-  deterministic fallback everywhere.
-- Wire a real STT into `intake/transcriber.js` for voice notes.
+- Add a real STT into `intake/transcriber.js` for voice notes.
 - Hook triage notifications out to the WhatsApp sender (currently in_app DB rows).
 - Decide hosting; revisit n8n + Manufact only when Pedro says go.
