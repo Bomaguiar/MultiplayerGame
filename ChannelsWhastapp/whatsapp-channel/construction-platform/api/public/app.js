@@ -1,8 +1,5 @@
-// Demo dashboard. Talks to the REAL API. Switches identity via /demo/token and
-// renders the customer / worker / founder view of the seeded project.
-
 let token = null;
-let me = null;          // { role, phone, name }
+let me = null;
 let projectId = null;
 
 const $ = (id) => document.getElementById(id);
@@ -85,22 +82,40 @@ async function loadLogs() {
 const NEXT = { todo: 'doing', doing: 'done' };
 async function loadTasks() {
   const { data: tasks } = await api('GET', `/projects/${projectId}/tasks`);
-  let html = '<h2>✅ Tarefas</h2>';
+  let html = '<h2>✅ Tarefas <span class="dim">(' + (tasks || []).length + ')</span></h2>';
+
+  const grouped = {};
   for (const t of tasks || []) {
-    const canAdvance = me.role === 'worker' && t.assignee_phone === me.phone && NEXT[t.status];
-    html += `<div class="row task">
-      <span class="status s-${t.status}">${t.status}</span>
-      <span class="grow">${esc(t.title)}</span>
-      <span class="prio p-${t.priority}">${t.priority}</span>
-      ${canAdvance ? `<button class="act sm" onclick="advance(${t.id},'${NEXT[t.status]}')">→ ${NEXT[t.status]}</button>` : ''}
-    </div>`;
+    const area = (t.tags && t.tags.length) ? t.tags[0] : (t.clickup_list_id ? 'ClickUp' : 'Geral');
+    if (!grouped[area]) grouped[area] = [];
+    grouped[area].push(t);
+  }
+
+  for (const [area, areaTasks] of Object.entries(grouped)) {
+    html += `<div class="row area-header"><span class="tag">${esc(area)}</span> <span class="dim">${areaTasks.length} tarefas</span></div>`;
+    for (const t of areaTasks) {
+      const canAdvance = (me.role === 'worker' || me.role === 'founder') && NEXT[t.status];
+      const assignee = t.assignee_name || t.assignee_phone || '';
+      const dueStr = t.due_on ? new Date(t.due_on).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' }) : '';
+      const clickupLink = t.clickup_url ? `<a href="${esc(t.clickup_url)}" target="_blank" class="cu-link" title="Abrir no ClickUp">↗</a>` : '';
+      html += `<div class="row task">
+        <span class="status s-${t.status}">${t.status}</span>
+        <span class="grow">
+          ${esc(t.title)} ${clickupLink}
+          ${assignee ? `<span class="dim">${esc(assignee)}</span>` : ''}
+        </span>
+        ${dueStr ? `<span class="dim">${dueStr}</span>` : ''}
+        <span class="prio p-${t.priority}">${t.priority}</span>
+        ${canAdvance ? `<button class="act sm" onclick="advance(${t.id},'${NEXT[t.status]}')">→ ${NEXT[t.status]}</button>` : ''}
+      </div>`;
+    }
   }
   $('tasks').innerHTML = html;
 }
 
 async function loadMaterials() {
   const { data: mats } = await api('GET', `/projects/${projectId}/materials`);
-  let html = '<h2>🧱 Materiais</h2>';
+  let html = '<h2>🧱 Materiais <span class="dim">(' + (mats || []).length + ')</span></h2>';
   if (me.role === 'worker') {
     html += `<button class="act" onclick="requestMaterial()">+ Pedir material</button>`;
   }
@@ -151,7 +166,7 @@ async function loadChangeOrders() {
   $('changeOrders').innerHTML = html;
 }
 
-// ── Actions (real API calls, role-gated server-side) ─────────────────────────
+// ── Actions ─────────────────────────────────────────────────────────────────
 async function advance(id, status) { await api('PATCH', `/tasks/${id}/status`, { status }); await render(); }
 async function decide(id, decision) { await api('PATCH', `/materials/${id}/decision`, { decision }); await render(); }
 async function postLog() {
@@ -182,7 +197,7 @@ function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
 (async function init() {
-  await api('POST', '/demo/seed');                 // idempotent
+  await api('POST', '/demo/seed');
   document.querySelectorAll('.role-btn').forEach((b) =>
     b.addEventListener('click', () => setRole(b.dataset.role)));
   await setRole('founder');

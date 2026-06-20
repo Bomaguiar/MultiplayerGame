@@ -15,6 +15,7 @@ import { taskRoutes } from './routes/tasks.js';
 import { materialRoutes } from './routes/materials.js';
 import { changeOrderRoutes } from './routes/changeOrders.js';
 import { clickupRoutes } from './routes/clickup.js';
+import { integrationRoutes } from './routes/integrations.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -38,6 +39,7 @@ export function buildApp(opts = {}) {
   app.register(materialRoutes);
   app.register(changeOrderRoutes);
   app.register(clickupRoutes);
+  app.register(integrationRoutes);
 
   // Demo dashboard + demo-only routes (login-as-role, seed). Gated by env so
   // they never ship to production.
