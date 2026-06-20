@@ -6,9 +6,14 @@
 
 import Fastify from 'fastify';
 import { checkDb } from './db.js';
+import { authDecorator } from './auth.js';
+import { projectRoutes } from './routes/projects.js';
 
 export function buildApp(opts = {}) {
   const app = Fastify({ logger: opts.logger ?? false });
+
+  // Decorate every request with req.user from the internal token (if present).
+  app.addHook('preHandler', authDecorator);
 
   // Liveness + DB connectivity. Always 200 so liveness probes stay green even
   // when the DB is down; the `db` flag carries the connectivity signal.
@@ -16,6 +21,9 @@ export function buildApp(opts = {}) {
     const db = await checkDb();
     return { status: 'ok', db, ts: new Date().toISOString() };
   });
+
+  // Domain routes.
+  app.register(projectRoutes);
 
   return app;
 }

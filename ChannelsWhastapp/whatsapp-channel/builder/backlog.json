@@ -25,7 +25,7 @@
       "spec": "Core domain: Project (name, address, client, status, budget), Phase (belongs to project, ordered), Milestone (belongs to phase, due date, % complete). CRUD endpoints, role-gated: founders write, customers read their own projects, workers read assigned projects.",
       "acceptance": ["CRUD endpoints for project/phase/milestone return correct status codes", "customer can only read their own project (404/403 otherwise)", "migrations create all three tables"],
       "files_hint": ["construction-platform/api/src/models/project.*", "construction-platform/api/src/routes/projects.*"],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "T04",
