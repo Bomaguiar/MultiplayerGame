@@ -15,6 +15,15 @@
       <button class="role-btn" data-role="worker">👷 Franek <small>obra</small></button>
       <button class="role-btn active" data-role="founder">🧭 Pedro <small>gestor</small></button>
     </div>
+    <div class="notif-wrapper" id="notifWrapper">
+      <button class="notif-bell" id="notifBell" onclick="toggleNotifications()">
+        🔔 <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+      </button>
+      <div class="notif-dropdown" id="notifDropdown" style="display:none">
+        <div class="notif-header">Notificações</div>
+        <div class="notif-list" id="notifList"></div>
+      </div>
+    </div>
   </header>
 
   <main id="app">

@@ -43,7 +43,7 @@ async function render() {
     <h1>${esc(p.name)}</h1>
     <div class="meta">📍 ${esc(p.address || '—')} · estado <b>${esc(p.status)}</b> · orçamento €${Number(p.budget).toLocaleString('pt-PT')}</div>`;
 
-  await Promise.all([loadBudget(), loadMilestones(), loadLogs(), loadTasks(), loadMaterials(), loadChangeOrders()]);
+  await Promise.all([loadBudget(), loadMilestones(), loadLogs(), loadTasks(), loadMaterials(), loadChangeOrders(), loadNotifBadge()]);
 }
 
 function clearCards() {
@@ -189,9 +189,77 @@ async function proposeChange() {
   await api('POST', `/projects/${projectId}/change-orders`, { title, description: desc, costDelta, daysDelta });
   await render();
 }
+// ── Notifications ──────────────────────────────────────────────────────────
+async function loadNotifBadge() {
+  const { data, status } = await api('GET', '/notifications/unread/count');
+  const badge = $('notifBadge');
+  if (status === 200 && data && data.count > 0) {
+    badge.textContent = data.count > 99 ? '99+' : data.count;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+async function toggleNotifications() {
+  const dd = $('notifDropdown');
+  if (dd.style.display === 'none') {
+    dd.style.display = 'block';
+    await loadNotifList();
+  } else {
+    dd.style.display = 'none';
+  }
+}
+
+async function loadNotifList() {
+  const { data: notifs, status } = await api('GET', '/notifications?limit=20');
+  const list = $('notifList');
+  if (status !== 200 || !notifs || !notifs.length) {
+    list.innerHTML = '<div class="notif-empty">Sem notificações.</div>';
+    return;
+  }
+  let html = '';
+  for (const n of notifs) {
+    const isUnread = n.status === 'pending' || n.status === 'sent';
+    const ago = timeAgo(n.created_at);
+    html += `<div class="notif-item ${isUnread ? 'unread' : ''}" onclick="markNotifRead(${n.id})">
+      <div class="notif-title">${esc(n.title)}</div>
+      ${n.body ? `<div class="notif-body">${esc(n.body)}</div>` : ''}
+      <div class="notif-time">${ago}</div>
+    </div>`;
+  }
+  list.innerHTML = html;
+}
+
+async function markNotifRead(id) {
+  await api('PATCH', `/notifications/${id}/read`);
+  await loadNotifList();
+  await loadNotifBadge();
+}
+
+function timeAgo(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'agora';
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d`;
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  const wrapper = $('notifWrapper');
+  if (wrapper && !wrapper.contains(e.target)) {
+    $('notifDropdown').style.display = 'none';
+  }
+});
+
 window.advance = advance; window.decide = decide;
 window.postLog = postLog; window.requestMaterial = requestMaterial;
 window.decideCO = decideCO; window.proposeChange = proposeChange;
+window.toggleNotifications = toggleNotifications; window.markNotifRead = markNotifRead;
 
 function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 

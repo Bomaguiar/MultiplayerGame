@@ -16,6 +16,8 @@ import { materialRoutes } from './routes/materials.js';
 import { changeOrderRoutes } from './routes/changeOrders.js';
 import { clickupRoutes } from './routes/clickup.js';
 import { integrationRoutes } from './routes/integrations.js';
+import { notificationRoutes } from './routes/notifications.js';
+import { whatsappRoutes } from './routes/whatsapp.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -40,6 +42,8 @@ export function buildApp(opts = {}) {
   app.register(changeOrderRoutes);
   app.register(clickupRoutes);
   app.register(integrationRoutes);
+  app.register(notificationRoutes);
+  app.register(whatsappRoutes);
 
   // Demo dashboard + demo-only routes (login-as-role, seed). Gated by env so
   // they never ship to production.

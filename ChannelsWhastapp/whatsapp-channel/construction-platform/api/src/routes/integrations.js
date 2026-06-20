@@ -21,6 +21,8 @@ export async function integrationRoutes(app) {
       return listClickUpTasks(project.id);
     });
 
-  app.get('/notifications', { preHandler: requireRole('founder') },
+  // Legacy in-memory notification log (kept for backwards compatibility).
+  // The new DB-backed notification routes are in routes/notifications.js.
+  app.get('/notifications/log', { preHandler: requireRole('founder') },
     async () => getNotificationLog());
 }
