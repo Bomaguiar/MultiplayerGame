@@ -17,7 +17,7 @@
       "spec": "Add a users table and role enum (customer, worker, founder, admin). Phone number is the identity (matches WhatsApp). Implement role lookup by phone and a requireRole() guard. No passwords — identity is proven by the WhatsApp bridge upstream; the API trusts a signed internal token.",
       "acceptance": ["users table with role column exists via migration", "requireRole() rejects wrong role with 403", "lookup-by-phone returns the user's role"],
       "files_hint": ["construction-platform/api/src/models/user.*", "construction-platform/api/src/middleware/requireRole.*"],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "T03",
