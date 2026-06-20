@@ -9,7 +9,7 @@
       "spec": "Stand up the API service (Node/Express or Fastify) with a Postgres connection layer, env config, and a GET /health endpoint returning {status:'ok', db:true}. Include a test runner (jest or vitest) wired to `npm test`.",
       "acceptance": ["GET /health returns 200 with db connectivity flag", "npm test runs and passes at least one test"],
       "files_hint": ["construction-platform/api/src/server.*", "construction-platform/api/src/db.*", "construction-platform/api/package.json"],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "T02",
@@ -81,6 +81,38 @@
       "spec": "A 'painel' command returns a concise health summary per project: % complete, overdue tasks, pending approvals, budget variance, last activity. Aggregates from the API; the natural-language phrasing is produced by a cheap model call.",
       "acceptance": ["dashboard endpoint aggregates the right metrics per project", "summary degrades gracefully when a project has no data", "founder-only access enforced"],
       "files_hint": ["construction-platform/api/src/routes/dashboard.*"],
+      "status": "pending"
+    },
+    {
+      "id": "T11",
+      "title": "Customer request intake (text + voice)",
+      "spec": "Customers send a request by text OR voice note. Voice notes are transcribed (pluggable transcriber interface; first impl can call a speech-to-text service, mockable in tests). Each request becomes a CustomerRequest record (raw text/transcript, project, customer, channel=text|voice, status=new) and the customer gets an acknowledgement reply.",
+      "acceptance": ["a text request creates a CustomerRequest with status 'new'", "a voice note is transcribed via the transcriber interface and stored with channel='voice'", "transcriber is mockable so tests need no external service", "customer receives an ack"],
+      "files_hint": ["construction-platform/api/src/models/customerRequest.*", "construction-platform/api/src/intake/transcriber.*", "construction-platform/api/src/routes/intake.*"],
+      "status": "pending"
+    },
+    {
+      "id": "T12",
+      "title": "AI brain — request triage & routing",
+      "spec": "The 'brain': classify each incoming CustomerRequest into a category (issue, question, change_request, scheduling, complaint), attach it to the right project, set urgency, and emit the correct notification event so the right role is alerted. Classification uses a model call behind an interface that is mockable in tests; a deterministic keyword fallback runs if the model is unavailable.",
+      "acceptance": ["a request is classified into one of the known categories", "classification routes to the correct role via the event engine", "keyword fallback classifies when the model interface is disabled", "urgency is set and stored"],
+      "files_hint": ["construction-platform/api/src/brain/triage.*", "construction-platform/api/src/brain/classifier.*"],
+      "status": "pending"
+    },
+    {
+      "id": "T13",
+      "title": "Materials brain — aggregated request query",
+      "spec": "Founders ask for a consolidated view of material requests across ALL builders/projects. Returns pending requests grouped by item with total quantities, by project, and by urgency, plus a short AI-phrased summary. Reuses the MaterialRequest model from T06.",
+      "acceptance": ["aggregation groups pending requests by item with summed quantities", "results can be filtered by project and urgency", "AI summary degrades to a plain list when the model is unavailable", "founder-only access enforced"],
+      "files_hint": ["construction-platform/api/src/brain/materialsRollup.*", "construction-platform/api/src/routes/materialsRollup.*"],
+      "status": "pending"
+    },
+    {
+      "id": "T14",
+      "title": "Conversation memory (per-contact brain context)",
+      "spec": "Give the brain short-term memory: store the last N interactions per contact (role-scoped) so follow-up messages have context ('and the kitchen one too'). Memory is summarized/trimmed to a token budget and never leaks across projects or roles.",
+      "acceptance": ["the last N turns per contact are retrievable", "memory is scoped so one contact cannot read another's context", "memory is trimmed to a configured budget"],
+      "files_hint": ["construction-platform/api/src/brain/memory.*"],
       "status": "pending"
     }
   ]

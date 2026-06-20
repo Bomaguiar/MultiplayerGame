@@ -1,0 +1,21 @@
+// Fastify app factory.
+//
+// Kept separate from server.js so tests can build an app instance and use
+// `app.inject()` without binding a port. Routes registered here grow as the
+// backlog is built (projects, logs, tasks, intake, brain, ...).
+
+import Fastify from 'fastify';
+import { checkDb } from './db.js';
+
+export function buildApp(opts = {}) {
+  const app = Fastify({ logger: opts.logger ?? false });
+
+  // Liveness + DB connectivity. Always 200 so liveness probes stay green even
+  // when the DB is down; the `db` flag carries the connectivity signal.
+  app.get('/health', async () => {
+    const db = await checkDb();
+    return { status: 'ok', db, ts: new Date().toISOString() };
+  });
+
+  return app;
+}
