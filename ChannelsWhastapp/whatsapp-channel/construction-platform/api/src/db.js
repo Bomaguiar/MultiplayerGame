@@ -35,6 +35,14 @@ export function getPool() {
   return pool;
 }
 
+/**
+ * Override the pool — used by the demo and integration tests to inject an
+ * in-memory Postgres (pg-mem). Pass null to reset to lazy real-pool creation.
+ */
+export function setPool(p) {
+  pool = p;
+}
+
 /** Run a parameterized query. Throws on failure (callers decide how to handle). */
 export async function query(text, params) {
   return getPool().query(text, params);
