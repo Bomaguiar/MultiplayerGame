@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Obra · Construction Platform Demo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🏗️ <strong>Obra</strong> · Construction Platform</div>
+    <div class="roles">
+      <span class="roles-label">Ver como:</span>
+      <button class="role-btn" data-role="customer">👤 Maria <small>cliente</small></button>
+      <button class="role-btn" data-role="worker">👷 João <small>obra</small></button>
+      <button class="role-btn active" data-role="founder">🧭 Pedro <small>gestor</small></button>
+    </div>
+  </header>
+
+  <main id="app">
+    <div id="banner" class="banner"></div>
+    <section id="project" class="project"></section>
+    <div class="grid">
+      <section id="milestones" class="card"></section>
+      <section id="logs" class="card"></section>
+      <section id="tasks" class="card"></section>
+      <section id="materials" class="card"></section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <span id="who"></span> · dados reais via API · <code>DEMO_MODE</code>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
