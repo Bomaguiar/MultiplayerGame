@@ -18,6 +18,9 @@ import { clickupRoutes } from './routes/clickup.js';
 import { integrationRoutes } from './routes/integrations.js';
 import { notificationRoutes } from './routes/notifications.js';
 import { whatsappRoutes } from './routes/whatsapp.js';
+import { dashboardRoutes } from './routes/dashboard.js';
+import { intakeRoutes } from './routes/intake.js';
+import { materialsRollupRoutes } from './routes/materialsRollup.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -44,6 +47,9 @@ export function buildApp(opts = {}) {
   app.register(integrationRoutes);
   app.register(notificationRoutes);
   app.register(whatsappRoutes);
+  app.register(dashboardRoutes);
+  app.register(intakeRoutes);
+  app.register(materialsRollupRoutes);
 
   // Demo dashboard + demo-only routes (login-as-role, seed). Gated by env so
   // they never ship to production.

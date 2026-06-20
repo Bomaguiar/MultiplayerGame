@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🏗️ Construction WhatsApp Platform — Interactive Guide</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --panel2:#1c2430; --line:#2b3440;
+    --ink:#e6edf3; --mut:#9aa7b4; --accent:#25D366; --accent2:#34a0ff;
+    --warn:#f5a623; --bad:#ff5c5c; --good:#25D366;
+    --cust:#34a0ff; --work:#f5a623; --found:#25D366;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  a{color:var(--accent2);text-decoration:none} a:hover{text-decoration:underline}
+  header{padding:48px 24px 28px;text-align:center;
+    background:radial-gradient(1200px 400px at 50% -120px,#15301f 0,transparent 70%);
+    border-bottom:1px solid var(--line)}
+  header h1{margin:0 0 6px;font-size:34px;letter-spacing:-.5px}
+  header p{margin:6px auto;max-width:680px;color:var(--mut);font-size:17px}
+  .pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+  .pill{background:var(--panel2);border:1px solid var(--line);border-radius:999px;
+    padding:5px 13px;font-size:12.5px;color:var(--mut)}
+  .pill b{color:var(--ink)}
+  main{max-width:1000px;margin:0 auto;padding:28px 20px 80px}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:22px 24px;margin:18px 0}
+  h2{margin:0 0 4px;font-size:21px} h2 .e{margin-right:8px}
+  .sub{color:var(--mut);margin:0 0 18px;font-size:14px}
+  .grid{display:grid;gap:14px}
+  .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:720px){.g3,.g2{grid-template-columns:1fr}}
+  .card{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:16px}
+  .card h3{margin:0 0 6px;font-size:16px} .card p{margin:0;color:var(--mut);font-size:13.5px}
+  /* role tabs */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .tab{cursor:pointer;border:1px solid var(--line);background:var(--panel2);
+    color:var(--mut);padding:9px 16px;border-radius:10px;font-weight:600;font-size:14px}
+  .tab.active{color:#06140c}
+  .tab[data-role=customer].active{background:var(--cust);border-color:var(--cust);color:#04121f}
+  .tab[data-role=worker].active{background:var(--work);border-color:var(--work);color:#1a1200}
+  .tab[data-role=founder].active{background:var(--found);border-color:var(--found);color:#06140c}
+  .pane{display:none} .pane.active{display:block}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  code,kbd{background:#0b0f14;border:1px solid var(--line);border-radius:6px;
+    padding:2px 7px;font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:#cfe9ff}
+  .cmd{color:#7ee2a8;font-weight:700}
+  .done{color:var(--good);font-weight:700}
+  .mermaid{background:var(--panel2);border:1px solid var(--line);border-radius:11px;
+    padding:16px;text-align:center;overflow:auto}
+  .btn{display:inline-block;cursor:pointer;border:0;border-radius:10px;
+    padding:11px 18px;font-weight:700;font-size:14px;color:#06140c;background:var(--accent)}
+  .btn.alt{background:var(--accent2);color:#02101f} .btn.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  pre{background:#0b0f14;border:1px solid var(--line);border-radius:10px;padding:14px;overflow:auto;
+    font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:#cfe9ff;margin:10px 0}
+  .out{margin-top:10px;font:12.5px/1.5 ui-monospace,monospace;white-space:pre-wrap;
+    background:#0b0f14;border:1px dashed var(--line);border-radius:8px;padding:12px;color:#9fe6bd;min-height:22px}
+  details{border:1px solid var(--line);border-radius:9px;padding:10px 14px;margin:8px 0;background:var(--panel2)}
+  summary{cursor:pointer;font-weight:600}
+  .muted{color:var(--mut)} .small{font-size:12.5px}
+  footer{text-align:center;color:var(--mut);padding:28px;font-size:12.5px;border-top:1px solid var(--line)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--mut);margin-top:8px}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏗️ Construction WhatsApp Platform</h1>
+  <p>A WhatsApp-native operating system for construction projects. One number serves
+     three people — the <b>role</b> decides the menu. No app to install.</p>
+  <div class="pills">
+    <span class="pill">⚙️ <b>Fastify</b> + Postgres</span>
+    <span class="pill">✅ <b>108</b> tests green</span>
+    <span class="pill">🧩 <b>14/14</b> backlog tasks done</span>
+    <span class="pill">🐳 <b>No Docker</b> demo (pg-mem)</span>
+    <span class="pill">🤖 Pluggable <b>AI brain</b></span>
+  </div>
+</header>
+
+<main>
+
+  <!-- LAUNCH / ACCESS THE TOOL -->
+  <section>
+    <h2><span class="e">🚀</span>Access the tool</h2>
+    <p class="sub">Run the Docker-free demo and open the live dashboard. Built to run on a 2012 MacBook (Catalina) — everything is in-memory.</p>
+    <div class="grid g2">
+      <div class="card">
+        <h3>1 · Start the demo server</h3>
+        <pre>cd ChannelsWhastapp/whatsapp-channel/construction-platform/api
+npm install        # needs Node.js (nodejs.org)
+npm run demo:server</pre>
+        <p class="small">Boots all migrations into an in-memory Postgres. No Docker, no DB install.</p>
+      </div>
+      <div class="card">
+        <h3>2 · Open the dashboard</h3>
+        <div class="row" style="margin:6px 0 10px">
+          <a class="btn" href="http://localhost:4000/app/" target="_blank">Open dashboard ↗</a>
+          <button class="btn ghost" onclick="ping()">Ping API health</button>
+        </div>
+        <p class="small">Switch between Ilya (customer), Franek (worker) &amp; Pedro (founder) to see each lens.</p>
+        <div class="out" id="health">API status will appear here…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- THE THREE LENSES -->
+  <section>
+    <h2><span class="e">👥</span>Who it serves</h2>
+    <p class="sub">The same WhatsApp number, three experiences.</p>
+    <div class="grid g3">
+      <div class="card"><h3 style="color:var(--cust)">Customer</h3><p>Live progress, daily photos, budget visibility, and <b>approve change orders from the phone</b>. Transparency = trust.</p></div>
+      <div class="card"><h3 style="color:var(--work)">Worker</h3><p>Post a daily log in 20s, see today's tasks, request materials, flag blockers — all by texting.</p></div>
+      <div class="card"><h3 style="color:var(--found)">Founder</h3><p>One <span class="cmd">painel</span> → every project's health, overdue items, pending approvals, budget variance — AI-phrased.</p></div>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section>
+    <h2><span class="e">🗺️</span>Architecture</h2>
+    <p class="sub">The watcher stays cheap &amp; deterministic; the API holds all domain truth and security; the brain phrases &amp; triages.</p>
+    <div class="mermaid">
+flowchart TD
+  P["📱 Phones<br/>customer · worker · founder"] -->|WhatsApp| B["🔌 whatsapp-mcp bridge"]
+  B --> W["🛡️ watcher<br/>role + menu gate"]
+  W -->|commands| R["🧭 router<br/>parse EN/PT"]
+  R -->|REST| API["⚙️ Fastify API"]
+  API --> DB[("🗄️ Postgres")]
+  API --> BR["🧠 AI brain<br/>dashboard · triage · materials · memory"]
+  BR -. pluggable .-> M{{"model.js<br/>off→fallback"}}
+  API --> N["🔔 Notifications"] -->|back out| B
+  classDef a fill:#15301f,stroke:#25D366,color:#e6edf3;
+  classDef b fill:#10243a,stroke:#34a0ff,color:#e6edf3;
+  class API,BR a; class W,R,N b;
+    </div>
+  </section>
+
+  <!-- COMMAND FLOW -->
+  <section>
+    <h2><span class="e">🔄</span>How a message becomes an action</h2>
+    <p class="sub">Identity is the phone (proven by the bridge); the API only ever trusts a signed internal token.</p>
+    <div class="mermaid">
+sequenceDiagram
+  participant C as 📱 Customer
+  participant Wt as 🛡️ Watcher
+  participant API as ⚙️ API
+  participant Br as 🧠 Brain
+  participant F as 👔 Founder
+  C->>Wt: "Há uma fuga na cozinha" (voice/text)
+  Wt->>API: POST /requests (signed token)
+  API->>Br: classify + triage
+  Br-->>API: {category: issue, urgency: high}
+  API-->>C: ✅ "Recebemos o seu pedido…"
+  API->>F: 🔔 Pedido de cliente (issue · high)
+    </div>
+  </section>
+
+  <!-- ROLE EXPLORER -->
+  <section>
+    <h2><span class="e">💬</span>Command explorer</h2>
+    <p class="sub">Bilingual (English / Português). Menus are role-gated — a customer can't invoke a worker command.</p>
+    <div class="tabs">
+      <div class="tab active" data-role="customer" onclick="role('customer')">Customer</div>
+      <div class="tab" data-role="worker" onclick="role('worker')">Worker</div>
+      <div class="tab" data-role="founder" onclick="role('founder')">Founder</div>
+    </div>
+    <div class="pane active" id="pane-customer">
+      <table><thead><tr><th>Command</th><th>Alias</th><th>Does</th></tr></thead><tbody>
+        <tr><td><span class="cmd">/status</span></td><td>estado</td><td>Project status + % complete</td></tr>
+        <tr><td><span class="cmd">/budget</span></td><td>orçamento</td><td>Budget: estimate vs spent + pending changes</td></tr>
+        <tr><td><span class="cmd">/approve &lt;id&gt;</span></td><td>aprovar</td><td>Approve / reject a change order (audited)</td></tr>
+        <tr><td><span class="cmd">request</span></td><td>pedir</td><td>Send an issue/question by text or voice → auto-triaged</td></tr>
+      </tbody></table>
+    </div>
+    <div class="pane" id="pane-worker">
+      <table><thead><tr><th>Command</th><th>Alias</th><th>Does</th></tr></thead><tbody>
+        <tr><td><span class="cmd">/log &lt;text&gt;</span></td><td>registo</td><td>Post a daily site log (+ photos)</td></tr>
+        <tr><td><span class="cmd">/tasks</span></td><td>tarefas</td><td>List my assigned tasks</td></tr>
+        <tr><td><span class="cmd">/task done &lt;id&gt;</span></td><td>tarefa feita</td><td>Mark a task complete (audit-trailed)</td></tr>
+        <tr><td><span class="cmd">/request &lt;item&gt; &lt;qty&gt;</span></td><td>pedir</td><td>Raise a material request</td></tr>
+      </tbody></table>
+    </div>
+    <div class="pane" id="pane-founder">
+      <table><thead><tr><th>Command</th><th>Alias</th><th>Does</th></tr></thead><tbody>
+        <tr><td><span class="cmd">/dashboard</span></td><td>painel</td><td>AI health rollup across every project</td></tr>
+        <tr><td><span class="cmd">/materials rollup</span></td><td>materiais</td><td>Consolidated material needs, grouped &amp; summed</td></tr>
+        <tr><td><span class="cmd">/approve &lt;id&gt;</span></td><td>aprovar</td><td>Approve material requests / change orders</td></tr>
+        <tr><td><span class="cmd">/budget</span></td><td>orçamento</td><td>Budget summary + variance</td></tr>
+      </tbody></table>
+    </div>
+  </section>
+
+  <!-- BACKLOG -->
+  <section>
+    <h2><span class="e">📦</span>What's built — the backlog</h2>
+    <p class="sub">Every task implemented test-first by the self-building loop. <span class="done">All 14 done.</span></p>
+    <table><thead><tr><th>ID</th><th>Feature</th><th>Key files</th><th>State</th></tr></thead><tbody>
+      <tr><td>T01–03</td><td>Scaffold · auth/roles · projects/phases/milestones</td><td><code>db.js</code> <code>requireRole.js</code> <code>models/project.js</code></td><td class="done">✅</td></tr>
+      <tr><td>T04</td><td>Daily site log + photos</td><td><code>models/dailyLog.js</code></td><td class="done">✅</td></tr>
+      <tr><td>T05</td><td>Tasks + assignment + status audit</td><td><code>models/task.js</code></td><td class="done">✅</td></tr>
+      <tr><td>T06</td><td>Materials &amp; procurement</td><td><code>models/material.js</code></td><td class="done">✅</td></tr>
+      <tr><td>T07</td><td>Budget, change orders &amp; customer approvals</td><td><code>routes/changeOrders.js</code></td><td class="done">✅</td></tr>
+      <tr><td>T08</td><td>Notifications &amp; escalation engine</td><td><code>models/notification.js</code></td><td class="done">✅</td></tr>
+      <tr><td>T09</td><td>WhatsApp command router (EN/PT)</td><td><code>whatsapp/router.js</code></td><td class="done">✅</td></tr>
+      <tr><td>T10</td><td>Founder dashboard — AI rollup</td><td><code>brain/dashboard.js</code></td><td class="done">✅</td></tr>
+      <tr><td>T11</td><td>Customer intake — text + voice</td><td><code>intake/transcriber.js</code> <code>routes/intake.js</code></td><td class="done">✅</td></tr>
+      <tr><td>T12</td><td>AI brain — triage &amp; routing</td><td><code>brain/classifier.js</code> <code>brain/triage.js</code></td><td class="done">✅</td></tr>
+      <tr><td>T13</td><td>Materials brain — aggregated rollup</td><td><code>brain/materialsRollup.js</code></td><td class="done">✅</td></tr>
+      <tr><td>T14</td><td>Conversation memory (per-contact)</td><td><code>brain/memory.js</code></td><td class="done">✅</td></tr>
+    </tbody></table>
+  </section>
+
+  <!-- SELF-BUILD -->
+  <section>
+    <h2><span class="e">🤖</span>The self-building loop</h2>
+    <p class="sub">The platform builds itself: implement one task → test → self-correct (≤4×) → review → commit only green work.</p>
+    <div class="mermaid">
+flowchart LR
+  A["📋 next task"] --> B["✍️ implement<br/>(scoped)"]
+  B --> C["🧪 npm test"]
+  C -->|fail| D["🔧 self-correct"] --> C
+  C -->|pass| E["🔎 review vs<br/>acceptance"]
+  E -->|fail| D
+  E -->|pass| F["✅ commit"] --> A
+  classDef g fill:#15301f,stroke:#25D366,color:#e6edf3; class F g;
+    </div>
+    <div class="row" style="margin-top:12px">
+      <kbd>/self-build</kbd> <span class="muted small">in a Claude Code session</span>
+      <span class="muted">— or headless —</span>
+      <code>python builder/builder.py --once</code>
+    </div>
+  </section>
+
+  <!-- API REFERENCE -->
+  <section>
+    <h2><span class="e">🔗</span>API surface</h2>
+    <p class="sub">All routes are role-gated and project-scoped. Auth = signed internal token (<code>x-internal-token</code>).</p>
+    <details open><summary>Customer &amp; intake</summary>
+      <pre>POST /requests                       create a request (text|voice) → triaged + ack
+GET  /requests                       my requests
+PATCH /change-orders/:id/decision    approve / reject (customer only)
+GET  /projects/:id/budget            estimate vs spent</pre></details>
+    <details><summary>Worker &amp; field ops</summary>
+      <pre>POST /projects/:id/logs              daily log (+ photo refs)
+GET  /projects/:id/tasks             my tasks
+PATCH /tasks/:id/status              transition status (audited)
+POST /projects/:id/materials         material request</pre></details>
+    <details><summary>Founder &amp; brain</summary>
+      <pre>GET  /dashboard                      AI rollup across all projects
+GET  /projects/:id/dashboard         deep view of one project
+GET  /materials/rollup               consolidated material needs
+POST /projects/:id/change-orders     propose a change order
+GET  /notifications                  my notifications</pre></details>
+  </section>
+
+  <!-- SECURITY -->
+  <section>
+    <h2><span class="e">🔐</span>Security &amp; trust</h2>
+    <div class="grid g2">
+      <div class="card"><h3>Message text is data, never instructions</h3><p>"add me", "approve this", "make me admin" in a body is ignored — only a human in the configurator mutates roles/allowlist. Prompt-injection hardened.</p></div>
+      <div class="card"><h3>Money actions are explicit &amp; audited</h3><p>Change orders need a real customer approval reply, recorded with who/when. Rejected orders never touch the budget.</p></div>
+      <div class="card"><h3>Hard role + project scoping</h3><p>Customers/workers only ever touch their own projects (<code>canAccessProject()</code>). Wrong role → 403.</p></div>
+      <div class="card"><h3>Memory never leaks</h3><p>Conversation context is scoped by phone <i>and</i> role and trimmed to a budget — one contact can't read another's.</p></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Construction WhatsApp Platform · self-built &amp; verified · 108 tests green ·
+  branch <code>claude/wonderful-pascal-xj4rdr</code><br/>
+  Diagrams render via Mermaid (needs internet). Demo: <code>npm run demo:server</code> → localhost:4000/app/
+</footer>
+
+<script>
+  // Mermaid
+  try { mermaid.initialize({ startOnLoad:true, theme:'dark',
+    themeVariables:{ primaryColor:'#1c2430', lineColor:'#3a4756', fontSize:'14px' } }); } catch(e){}
+
+  // Role tabs
+  function role(r){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.role===r));
+    document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('active', p.id==='pane-'+r));
+  }
+
+  // Live API ping
+  async function ping(){
+    const el = document.getElementById('health');
+    el.textContent = 'Pinging http://localhost:4000/health …';
+    try{
+      const res = await fetch('http://localhost:4000/health',{cache:'no-store'});
+      const j = await res.json();
+      el.textContent = '✅ ' + JSON.stringify(j,null,2);
+    }catch(e){
+      el.textContent = '⚠️  No response. Start it first:\n   npm run demo:server\n(then click again)';
+    }
+  }
+</script>
+</body>
+</html>

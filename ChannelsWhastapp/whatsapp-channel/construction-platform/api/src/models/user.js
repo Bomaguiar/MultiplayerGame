@@ -36,3 +36,12 @@ export async function roleForPhone(phone) {
   const u = await findByPhone(phone);
   return u ? u.role : null;
 }
+
+/** All users holding a given role. Used to resolve notification recipients. */
+export async function usersByRole(role) {
+  const { rows } = await query(
+    `SELECT id, phone, name, role FROM users WHERE role = $1 ORDER BY id`,
+    [role]
+  );
+  return rows;
+}

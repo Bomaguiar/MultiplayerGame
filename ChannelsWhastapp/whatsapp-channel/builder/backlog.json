@@ -106,7 +106,7 @@
         "construction-platform/api/src/models/budget.*",
         "construction-platform/api/src/routes/changeOrders.*"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "T08",
@@ -121,7 +121,7 @@
         "construction-platform/api/src/events/*",
         "construction-platform/api/src/notify/*"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "T09",
@@ -136,7 +136,7 @@
         "construction-platform/router/*",
         "ChannelsWhastapp/whatsapp-channel/watcher/watcher.py"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "T10",
@@ -150,7 +150,7 @@
       "files_hint": [
         "construction-platform/api/src/routes/dashboard.*"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "T11",
@@ -167,7 +167,7 @@
         "construction-platform/api/src/intake/transcriber.*",
         "construction-platform/api/src/routes/intake.*"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "T12",
@@ -183,7 +183,7 @@
         "construction-platform/api/src/brain/triage.*",
         "construction-platform/api/src/brain/classifier.*"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "T13",
@@ -199,7 +199,7 @@
         "construction-platform/api/src/brain/materialsRollup.*",
         "construction-platform/api/src/routes/materialsRollup.*"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "T14",
@@ -213,7 +213,7 @@
       "files_hint": [
         "construction-platform/api/src/brain/memory.*"
       ],
-      "status": "pending"
+      "status": "done"
     }
   ]
 }
