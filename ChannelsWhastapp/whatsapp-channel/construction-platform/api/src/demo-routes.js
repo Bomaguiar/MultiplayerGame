@@ -7,6 +7,7 @@ import { createTask, setStatus } from './models/task.js';
 import { createRequest } from './models/material.js';
 import { createUser } from './models/user.js';
 import { createChangeOrder } from './models/changeOrder.js';
+import { createSelection } from './models/selection.js';
 import { syncClickUpBatch } from './integrations/clickup.js';
 
 const ACTORS = {
@@ -136,6 +137,19 @@ export async function demoRoutes(app) {
       projectId: project.id, title: 'Add electric shutters to all 9 openings',
       description: 'Originally manual shutters. Electric motors + wiring for 9 windows/doors.',
       costDelta: 6200, daysDelta: 5, proposedBy: ACTORS.founder.phone,
+    });
+
+    await createSelection({
+      projectId: project.id, room: 'Cozinha', name: 'Bancada',
+      description: 'Escolha do material da bancada da cozinha.',
+      options: ['Granito preto', 'Quartzo branco', 'Betão polido'],
+      price: 3200, dueOn: '2026-07-05', proposedBy: ACTORS.founder.phone,
+    });
+    await createSelection({
+      projectId: project.id, room: 'Sala', name: 'Pavimento',
+      description: 'Acabamento do pavimento da sala principal.',
+      options: ['Madeira de carvalho', 'Microcimento', 'Porcelânico'],
+      price: 5400, dueOn: '2026-07-12', proposedBy: ACTORS.founder.phone,
     });
 
     return { seeded: true, projectId: project.id, clickupSync: syncResult };

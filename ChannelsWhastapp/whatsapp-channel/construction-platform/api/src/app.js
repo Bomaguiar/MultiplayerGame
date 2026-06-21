@@ -14,6 +14,7 @@ import { logRoutes } from './routes/logs.js';
 import { taskRoutes } from './routes/tasks.js';
 import { materialRoutes } from './routes/materials.js';
 import { changeOrderRoutes } from './routes/changeOrders.js';
+import { selectionRoutes } from './routes/selections.js';
 import { clickupRoutes } from './routes/clickup.js';
 import { integrationRoutes } from './routes/integrations.js';
 import { notificationRoutes } from './routes/notifications.js';
@@ -44,6 +45,7 @@ export function buildApp(opts = {}) {
   app.register(taskRoutes);
   app.register(materialRoutes);
   app.register(changeOrderRoutes);
+  app.register(selectionRoutes);
   app.register(clickupRoutes);
   app.register(integrationRoutes);
   app.register(notificationRoutes);

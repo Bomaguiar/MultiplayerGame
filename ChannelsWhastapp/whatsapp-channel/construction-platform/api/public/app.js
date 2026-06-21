@@ -50,11 +50,11 @@ async function render() {
       <span>Orçamento <b>€${Number(p.budget).toLocaleString('pt-PT')}</b></span>
     </div>`;
 
-  await Promise.all([loadBudget(), loadMilestones(), loadLogs(), loadTasks(), loadMaterials(), loadChangeOrders(), loadNotifBadge()]);
+  await Promise.all([loadBudget(), loadMilestones(), loadSelections(), loadLogs(), loadTasks(), loadMaterials(), loadChangeOrders(), loadNotifBadge()]);
 }
 
 function clearCards() {
-  ['budget', 'milestones', 'logs', 'tasks', 'materials', 'changeOrders'].forEach((id) => ($(id).innerHTML = ''));
+  ['budget', 'milestones', 'selections', 'logs', 'tasks', 'materials', 'changeOrders'].forEach((id) => ($(id).innerHTML = ''));
 }
 
 async function loadMilestones() {
@@ -70,6 +70,41 @@ async function loadMilestones() {
     }
   }
   $('milestones').innerHTML = html;
+}
+
+async function loadSelections() {
+  const { data: sels } = await api('GET', `/projects/${projectId}/selections`);
+  let html = '<h2>🎨 Selecções <span class="dim">(' + (sels || []).length + ')</span></h2>';
+  if (me.role === 'founder') {
+    html += `<button class="act" onclick="proposeSelection()">+ Nova selecção</button>`;
+  }
+  if (!sels || !sels.length) {
+    $('selections').innerHTML = html + '<div class="dim">Sem selecções.</div>';
+    return;
+  }
+  for (const s of sels) {
+    const canDecide = me.role === 'customer' && s.status === 'pending';
+    const opts = (s.options || []).join(' · ');
+    const statusClass = s.status === 'approved' ? 'done' : s.status === 'declined' ? 'denied' : 'requested';
+    const due = s.due_on ? new Date(s.due_on).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' }) : '';
+    let chosen = '';
+    if (s.status === 'approved') {
+      chosen = `<div class="dim">✔ ${esc(s.chosen_option || '—')} · assinado por ${esc(s.signed_name || '')}</div>`;
+    }
+    html += `<div class="row mat">
+      <span class="grow">
+        ${s.room ? `<span class="tag">${esc(s.room)}</span> ` : ''}<b>${esc(s.name)}</b>
+        ${opts ? `<div class="dim">${esc(opts)}</div>` : ''}
+        ${chosen}
+      </span>
+      ${Number(s.price) ? `<span class="prio">+€${Number(s.price).toLocaleString('pt-PT')}</span>` : ''}
+      ${due ? `<span class="dim">${due}</span>` : ''}
+      <span class="status s-${statusClass}">${s.status}</span>
+      ${canDecide ? `<button class="act sm ok" onclick="approveSelection(${s.id}, ${JSON.stringify(s.options || []).replace(/"/g, '&quot;')})">aprovar</button>
+                     <button class="act sm no" onclick="declineSelection(${s.id})">recusar</button>` : ''}
+    </div>`;
+  }
+  $('selections').innerHTML = html;
 }
 
 async function loadLogs() {
@@ -188,6 +223,36 @@ async function requestMaterial() {
   await render();
 }
 async function decideCO(id, decision) { await api('PATCH', `/change-orders/${id}/decision`, { decision }); await render(); }
+async function proposeSelection() {
+  const name = prompt('Selecção (ex: Bancada da cozinha):'); if (!name) return;
+  const room = prompt('Divisão (ex: Cozinha):', '') || null;
+  const options = (prompt('Opções separadas por vírgula:', '') || '')
+    .split(',').map((o) => o.trim()).filter(Boolean);
+  const price = Number(prompt('Impacto no custo (€):', '0')) || 0;
+  await api('POST', `/projects/${projectId}/selections`, { name, room, options, price });
+  await render();
+}
+async function approveSelection(id, options) {
+  let chosenOption = null;
+  if (options && options.length) {
+    chosenOption = prompt(`Escolha uma opção:\n${options.map((o, i) => `${i + 1}. ${o}`).join('\n')}`, options[0]);
+    if (chosenOption === null) return;
+    // accept either the number or the text
+    const n = Number(chosenOption);
+    if (n >= 1 && n <= options.length) chosenOption = options[n - 1];
+  }
+  const signedName = prompt('Assine com o seu nome para aprovar:', me.name);
+  if (!signedName || !signedName.trim()) return;
+  const { status, data } = await api('PATCH', `/selections/${id}/decision`,
+    { decision: 'approved', chosenOption, signedName });
+  if (status !== 200) alert(data?.error || 'Erro ao aprovar.');
+  await render();
+}
+async function declineSelection(id) {
+  if (!confirm('Recusar esta selecção?')) return;
+  await api('PATCH', `/selections/${id}/decision`, { decision: 'declined' });
+  await render();
+}
 async function proposeChange() {
   const title = prompt('Título da alteração:'); if (!title) return;
   const desc = prompt('Descrição:', '') || '';
@@ -266,6 +331,8 @@ document.addEventListener('click', (e) => {
 window.advance = advance; window.decide = decide;
 window.postLog = postLog; window.requestMaterial = requestMaterial;
 window.decideCO = decideCO; window.proposeChange = proposeChange;
+window.proposeSelection = proposeSelection; window.approveSelection = approveSelection;
+window.declineSelection = declineSelection;
 window.toggleNotifications = toggleNotifications; window.markNotifRead = markNotifRead;
 
 function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
