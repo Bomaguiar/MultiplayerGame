@@ -244,6 +244,56 @@ main { max-width: 1180px; margin: 36px auto 64px; padding: 0 32px; }
 .notif-item .notif-time { color: var(--muted); font-size: 11px; margin-top: 4px; }
 .notif-empty { padding: 28px; text-align: center; color: var(--muted); font-size: 13px; }
 
+/* ── Photo gallery ───────────────────────────────────────────────────────── */
+.gallery-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px; margin-top: 6px;
+}
+.gallery-thumb {
+  position: relative; aspect-ratio: 4 / 3; border-radius: 4px; overflow: hidden;
+  cursor: pointer; border: 1px solid var(--line); background: var(--sand);
+}
+.gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform .25s ease; }
+.gallery-thumb:hover img { transform: scale(1.06); }
+.gallery-thumb .cap {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 6px;
+  font-size: 9px; letter-spacing: .06em; text-transform: uppercase;
+  color: #F3EEE2; background: linear-gradient(transparent, rgba(34,29,22,.82));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.log-thumbs { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.log-thumbs .gallery-thumb { width: 72px; aspect-ratio: 4 / 3; }
+
+/* Lightbox */
+.lightbox {
+  position: fixed; inset: 0; z-index: 1000; display: none;
+  background: rgba(20, 16, 11, .92); align-items: center; justify-content: center;
+}
+.lightbox.open { display: flex; }
+.lightbox img {
+  max-width: 86vw; max-height: 78vh; border-radius: 4px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+.lightbox .lb-cap {
+  position: absolute; bottom: 5vh; left: 0; right: 0; text-align: center;
+  color: #EFE9DD; font-size: 14px; padding: 0 24px;
+}
+.lightbox .lb-cap .lb-date { color: var(--gold); font-size: 12px; text-transform: uppercase; letter-spacing: .14em; }
+.lb-btn {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  background: rgba(243,238,226,.12); color: #F3EEE2; border: 1px solid rgba(243,238,226,.25);
+  width: 48px; height: 48px; border-radius: 50%; font-size: 22px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: background .15s;
+}
+.lb-btn:hover { background: var(--gold); color: #211a10; border-color: var(--gold); }
+.lb-prev { left: 3vw; } .lb-next { right: 3vw; }
+.lb-close { position: absolute; top: 3vh; right: 3vw; }
+.lb-count {
+  position: absolute; top: 3vh; left: 3vw; color: #C9C0AE; font-size: 13px;
+  letter-spacing: .1em; font-variant-numeric: tabular-nums;
+}
+
 /* ── Footer ──────────────────────────────────────────────────────────────── */
 .footer {
   text-align: center; color: var(--muted); font-size: 12px; padding: 28px;

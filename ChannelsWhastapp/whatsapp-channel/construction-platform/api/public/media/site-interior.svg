@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Interior wiring and outlets">
+  <rect width="800" height="600" fill="#E7DECB"/>
+  <rect y="430" width="800" height="170" fill="#B9A988"/>
+  <rect x="0" y="420" width="800" height="10" fill="#8A7A58"/>
+  <rect x="120" y="180" width="120" height="180" fill="#D8CCB2" stroke="#9A8A66" stroke-width="3"/>
+  <rect x="150" y="250" width="60" height="40" fill="#FBF9F4" stroke="#3A2E1F" stroke-width="3"/>
+  <circle cx="170" cy="270" r="4" fill="#3A2E1F"/><circle cx="190" cy="270" r="4" fill="#3A2E1F"/>
+  <rect x="560" y="160" width="160" height="220" fill="#CFC4AE" stroke="#9A8A66" stroke-width="3"/>
+  <rect x="600" y="220" width="80" height="50" fill="#FBF9F4" stroke="#3A2E1F" stroke-width="3"/>
+  <rect x="620" y="235" width="16" height="20" fill="#3A2E1F"/><rect x="648" y="235" width="16" height="20" fill="#3A2E1F"/>
+  <path d="M360 120 q40 120 0 240" fill="none" stroke="#A67C45" stroke-width="6"/>
+  <path d="M400 120 q-40 140 0 240" fill="none" stroke="#9C5742" stroke-width="6"/>
+  <circle cx="380" cy="120" r="14" fill="#2E2820"/>
+</svg>

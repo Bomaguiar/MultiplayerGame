@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Painted metal gate">
+  <defs>
+    <linearGradient id="skyB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D9C3A0"/><stop offset="1" stop-color="#A88A5E"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#skyB)"/>
+  <rect y="430" width="800" height="170" fill="#5E4D34"/>
+  <rect x="120" y="150" width="560" height="300" fill="#2E2820"/>
+  <g stroke="#1c1813" stroke-width="6">
+    <line x1="200" y1="150" x2="200" y2="450"/><line x1="280" y1="150" x2="280" y2="450"/>
+    <line x1="360" y1="150" x2="360" y2="450"/><line x1="440" y1="150" x2="440" y2="450"/>
+    <line x1="520" y1="150" x2="520" y2="450"/><line x1="600" y1="150" x2="600" y2="450"/>
+    <line x1="120" y1="250" x2="680" y2="250"/><line x1="120" y1="350" x2="680" y2="350"/>
+  </g>
+  <rect x="120" y="150" width="560" height="300" fill="none" stroke="#A67C45" stroke-width="8"/>
+</svg>

@@ -1,6 +1,8 @@
 let token = null;
 let me = null;
 let projectId = null;
+let logsCache = [];
+let galleryState = [];
 
 const $ = (id) => document.getElementById(id);
 
@@ -50,11 +52,12 @@ async function render() {
       <span>Orçamento <b>€${Number(p.budget).toLocaleString('pt-PT')}</b></span>
     </div>`;
 
-  await Promise.all([loadBudget(), loadMilestones(), loadSelections(), loadLogs(), loadTasks(), loadMaterials(), loadChangeOrders(), loadNotifBadge()]);
+  await loadLogsData();
+  await Promise.all([loadBudget(), loadMilestones(), loadSelections(), loadGallery(), loadLogs(), loadTasks(), loadMaterials(), loadChangeOrders(), loadNotifBadge()]);
 }
 
 function clearCards() {
-  ['budget', 'milestones', 'selections', 'logs', 'tasks', 'materials', 'changeOrders'].forEach((id) => ($(id).innerHTML = ''));
+  ['budget', 'milestones', 'selections', 'gallery', 'logs', 'tasks', 'materials', 'changeOrders'].forEach((id) => ($(id).innerHTML = ''));
 }
 
 async function loadMilestones() {
@@ -107,18 +110,116 @@ async function loadSelections() {
   $('selections').innerHTML = html;
 }
 
-async function loadLogs() {
+// ── Photos: resolve a stored ref to a displayable src ────────────────────────
+// Real integrations store http(s) media URLs; the demo stores WhatsApp-style
+// keys, which we map to bundled artwork. Anything unknown gets a captioned
+// placeholder so the gallery still renders.
+const MEDIA_MAP = {
+  'wa-media/fence-1.jpg': 'media/site-exterior.svg',
+  'wa-media/gate-1.jpg': 'media/site-gate.svg',
+  'wa-media/outlets-1.jpg': 'media/site-interior.svg',
+  'wa-media/kitchen-1.jpg': 'media/site-kitchen.svg',
+};
+function resolveMedia(ref) {
+  if (/^https?:\/\//i.test(ref)) return ref;
+  if (MEDIA_MAP[ref]) return MEDIA_MAP[ref];
+  const label = String(ref).split('/').pop().replace(/\.[a-z0-9]+$/i, '').replace(/[-_]/g, ' ');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+    <rect width="400" height="300" fill="#E4DCCD"/>
+    <circle cx="200" cy="120" r="34" fill="none" stroke="#A67C45" stroke-width="6"/>
+    <circle cx="200" cy="120" r="14" fill="#A67C45"/>
+    <rect x="150" y="92" width="30" height="14" rx="3" fill="#A67C45"/>
+    <text x="200" y="205" font-family="sans-serif" font-size="18" fill="#8A8174" text-anchor="middle">${esc(label)}</text>
+  </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+// Flatten every photo across the project's logs into one ordered gallery.
+function galleryPhotos() {
+  const photos = [];
+  for (const l of logsCache) {
+    for (const ref of l.photo_refs || []) {
+      photos.push({ src: resolveMedia(ref), note: l.note || '', date: l.logged_at });
+    }
+  }
+  return photos;
+}
+
+async function loadLogsData() {
   const { data: logs } = await api('GET', `/projects/${projectId}/logs`);
+  logsCache = logs || [];
+}
+
+async function loadGallery() {
+  const photos = galleryPhotos();
+  galleryState = photos;
+  let html = `<h2>📸 Galeria <span class="dim">(${photos.length})</span></h2>`;
+  if (!photos.length) {
+    $('gallery').innerHTML = html + '<div class="dim">Sem fotografias ainda.</div>';
+    return;
+  }
+  html += '<div class="gallery-grid">';
+  photos.forEach((p, i) => {
+    html += `<div class="gallery-thumb" onclick="openLightbox(${i})">
+      <img src="${esc(p.src)}" alt="${esc(p.note)}" loading="lazy" />
+      <span class="cap">${esc(fmtDate(p.date))}</span>
+    </div>`;
+  });
+  html += '</div>';
+  $('gallery').innerHTML = html;
+}
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' });
+}
+
+async function loadLogs() {
   let html = '<h2>📔 Diário de Obra</h2>';
   if (me.role === 'worker') {
     html += `<button class="act" onclick="postLog()">+ Novo registo</button>`;
   }
-  for (const l of logs || []) {
-    const photos = (l.photo_refs || []).map(() => '🖼️').join(' ');
+  let offset = 0; // map each log's photos to their index in the flat gallery
+  for (const l of logsCache) {
+    const refs = l.photo_refs || [];
+    let thumbs = '';
+    if (refs.length) {
+      thumbs = '<div class="log-thumbs">';
+      refs.forEach((ref, k) => {
+        const gi = offset + k;
+        thumbs += `<div class="gallery-thumb" onclick="openLightbox(${gi})">
+          <img src="${esc(resolveMedia(ref))}" alt="" loading="lazy" /></div>`;
+      });
+      thumbs += '</div>';
+    }
+    offset += refs.length;
     html += `<div class="row log"><div>${esc(l.note)}</div>
-      <div class="dim">${esc(l.weather || '')} · ${l.crew_count} pers · ${l.hours}h ${photos}</div></div>`;
+      <div class="dim">${esc(l.weather || '')} · ${l.crew_count} pers · ${l.hours}h</div>${thumbs}</div>`;
   }
-  $('logs').innerHTML = html || '<h2>📔 Diário de Obra</h2><div class="dim">Sem registos.</div>';
+  if (!logsCache.length) html += '<div class="dim">Sem registos.</div>';
+  $('logs').innerHTML = html;
+}
+
+// ── Lightbox ─────────────────────────────────────────────────────────────────
+let lbIndex = 0;
+function openLightbox(i) {
+  if (!galleryState.length) return;
+  lbIndex = i;
+  renderLightbox();
+  $('lightbox').classList.add('open');
+}
+function closeLightbox() { $('lightbox').classList.remove('open'); }
+function lbNav(d) {
+  lbIndex = (lbIndex + d + galleryState.length) % galleryState.length;
+  renderLightbox();
+}
+function renderLightbox() {
+  const p = galleryState[lbIndex];
+  if (!p) return;
+  $('lbImg').src = p.src;
+  $('lbNote').textContent = p.note;
+  $('lbDate').textContent = p.date ? new Date(p.date).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  $('lbCount').textContent = `${lbIndex + 1} / ${galleryState.length}`;
 }
 
 const NEXT = { todo: 'doing', doing: 'done' };
@@ -213,7 +314,9 @@ async function advance(id, status) { await api('PATCH', `/tasks/${id}/status`, {
 async function decide(id, decision) { await api('PATCH', `/materials/${id}/decision`, { decision }); await render(); }
 async function postLog() {
   const note = prompt('Registo de hoje:'); if (!note) return;
-  await api('POST', `/projects/${projectId}/logs`, { note, crewCount: 3, hours: 8 });
+  const photo = prompt('URL de uma foto (opcional):', '') || '';
+  const photoRefs = photo.trim() ? [photo.trim()] : [];
+  await api('POST', `/projects/${projectId}/logs`, { note, crewCount: 3, hours: 8, photoRefs });
   await render();
 }
 async function requestMaterial() {
@@ -333,6 +436,15 @@ window.postLog = postLog; window.requestMaterial = requestMaterial;
 window.decideCO = decideCO; window.proposeChange = proposeChange;
 window.proposeSelection = proposeSelection; window.approveSelection = approveSelection;
 window.declineSelection = declineSelection;
+window.openLightbox = openLightbox; window.closeLightbox = closeLightbox; window.lbNav = lbNav;
+
+// Keyboard navigation for the lightbox.
+document.addEventListener('keydown', (e) => {
+  if (!$('lightbox').classList.contains('open')) return;
+  if (e.key === 'Escape') closeLightbox();
+  else if (e.key === 'ArrowLeft') lbNav(-1);
+  else if (e.key === 'ArrowRight') lbNav(1);
+});
 window.toggleNotifications = toggleNotifications; window.markNotifRead = markNotifRead;
 
 function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }

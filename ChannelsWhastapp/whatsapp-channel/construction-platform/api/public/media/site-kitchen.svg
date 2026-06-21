@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Kitchen cabinetry">
+  <rect width="800" height="600" fill="#EFE7D6"/>
+  <rect y="300" width="800" height="60" fill="#3A2E1F"/>
+  <rect y="360" width="800" height="240" fill="#B89A6E"/>
+  <g fill="#A6824E" stroke="#7A5F36" stroke-width="3">
+    <rect x="40" y="370" width="150" height="210"/><rect x="200" y="370" width="150" height="210"/>
+    <rect x="360" y="370" width="150" height="210"/><rect x="520" y="370" width="150" height="210"/>
+    <rect x="680" y="370" width="90" height="210"/>
+  </g>
+  <g fill="#2E2820"><circle cx="175" cy="475" r="6"/><circle cx="215" cy="475" r="6"/>
+    <circle cx="335" cy="475" r="6"/><circle cx="375" cy="475" r="6"/>
+    <circle cx="495" cy="475" r="6"/><circle cx="535" cy="475" r="6"/></g>
+  <g fill="#CFC4AE" stroke="#9A8A66" stroke-width="3">
+    <rect x="60" y="120" width="130" height="150"/><rect x="210" y="120" width="130" height="150"/>
+    <rect x="520" y="120" width="130" height="150"/></g>
+  <path d="M420 150 v120" stroke="#8A8174" stroke-width="8"/>
+  <path d="M420 150 q40 0 40 40" fill="none" stroke="#8A8174" stroke-width="8"/>
+</svg>

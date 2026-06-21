@@ -34,6 +34,7 @@
     <section id="project" class="project"></section>
     <section id="budget" class="card budget-card"></section>
     <div class="grid">
+      <section id="gallery" class="card"></section>
       <section id="milestones" class="card"></section>
       <section id="selections" class="card"></section>
       <section id="logs" class="card"></section>
@@ -42,6 +43,15 @@
       <section id="changeOrders" class="card"></section>
     </div>
   </main>
+
+  <div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()">
+    <span class="lb-count" id="lbCount"></span>
+    <button class="lb-btn lb-close" onclick="closeLightbox()" aria-label="Fechar">✕</button>
+    <button class="lb-btn lb-prev" onclick="lbNav(-1)" aria-label="Anterior">‹</button>
+    <img id="lbImg" alt="" />
+    <button class="lb-btn lb-next" onclick="lbNav(1)" aria-label="Seguinte">›</button>
+    <div class="lb-cap"><div class="lb-date" id="lbDate"></div><div id="lbNote"></div></div>
+  </div>
 
   <footer class="footer">
     <span id="who"></span> · dados reais via API · <code>DEMO_MODE</code> · <a href="admin.html">⚙️ Admin</a>
