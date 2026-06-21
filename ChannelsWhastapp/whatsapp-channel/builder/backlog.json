@@ -214,6 +214,22 @@
         "construction-platform/api/src/brain/memory.*"
       ],
       "status": "done"
+    },
+    {
+      "id": "T15",
+      "title": "Admin page — manage users (names, roles) & project details",
+      "spec": "Founder/admin can list users, edit a user name and role, and add a user; plus edit project name/budget/address. Backend admin routes + a served admin page.",
+      "acceptance": [
+        "founder lists/updates/creates users; worker is 403",
+        "invalid role rejected with 400; unknown user update is 404",
+        "admin page lets the founder rename people and save"
+      ],
+      "files_hint": [
+        "api/src/routes/admin.js",
+        "api/src/models/user.js",
+        "api/public/admin.html"
+      ],
+      "status": "done"
     }
   ]
 }

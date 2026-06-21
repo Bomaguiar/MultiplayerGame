@@ -45,3 +45,34 @@ export async function usersByRole(role) {
   );
   return rows;
 }
+
+/** Every user, ordered founder → admin → worker → customer, then by name. */
+export async function listUsers() {
+  const { rows } = await query(
+    `SELECT id, phone, name, role, created_at FROM users
+     ORDER BY CASE role WHEN 'founder' THEN 0 WHEN 'admin' THEN 1 WHEN 'worker' THEN 2 ELSE 3 END,
+              name NULLS LAST, id`
+  );
+  return rows;
+}
+
+/**
+ * Update a user's name and/or role by phone (phone is identity, never changed).
+ * Returns the updated row, or null if no such user.
+ */
+export async function updateUser(phone, { name, role } = {}) {
+  if (role !== undefined && !isRole(role)) throw new Error(`invalid role: ${role}`);
+  const sets = [];
+  const vals = [];
+  let i = 1;
+  if (name !== undefined) { sets.push(`name = $${i++}`); vals.push(name); }
+  if (role !== undefined) { sets.push(`role = $${i++}`); vals.push(role); }
+  if (!sets.length) return findByPhone(phone);
+  vals.push(phone);
+  const { rows } = await query(
+    `UPDATE users SET ${sets.join(', ')} WHERE phone = $${i}
+     RETURNING id, phone, name, role`,
+    vals
+  );
+  return rows[0] ?? null;
+}

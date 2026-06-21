@@ -50,6 +50,7 @@ Full vision: [`BLUEPRINT.md`](./BLUEPRINT.md). Demo guide: [`DEMO.md`](./DEMO.md
 | T12 | AI brain — triage & routing (`brain/classifier`, `brain/triage`) | ✅ |
 | T13 | Materials brain — aggregated rollup (`/materials/rollup`) | ✅ |
 | T14 | Conversation memory (`brain/memory`) | ✅ |
+| T15 | Admin page — manage users (names/roles) + project details | ✅ |
 
 ## Key Files (api/src)
 - `brain/model.js` — pluggable AI interface; OFF by default → deterministic fallback. `setModelClient()` to enable, mockable in tests.
