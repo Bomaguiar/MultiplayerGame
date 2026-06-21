@@ -3,37 +3,72 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Admin · Construction Platform</title>
+<title>Admin · Pedra &amp; Luz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css" />
 <style>
-  .admin-wrap { max-width: 920px; margin: 0 auto; padding: 18px; }
-  .admin-card { background:#fff; border:1px solid #e6e9ef; border-radius:12px; padding:18px 20px; margin:16px 0; }
-  .admin-card h2 { margin:0 0 12px; font-size:18px; }
-  table.admin { width:100%; border-collapse:collapse; }
-  table.admin th, table.admin td { text-align:left; padding:8px 10px; border-bottom:1px solid #eef0f4; font-size:14px; vertical-align:middle; }
-  table.admin th { color:#8a93a2; font-size:12px; text-transform:uppercase; letter-spacing:.4px; }
-  table.admin input, table.admin select, .row-form input, .row-form select {
-    padding:7px 9px; border:1px solid #d4d9e2; border-radius:8px; font-size:14px; }
-  .btn { cursor:pointer; border:0; border-radius:8px; padding:8px 14px; font-weight:600; font-size:13px; background:#25D366; color:#06140c; }
-  .btn.alt { background:#34a0ff; color:#02101f; }
-  .btn.ghost { background:#f1f3f7; color:#333; border:1px solid #d4d9e2; }
-  .row-form { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:12px; }
-  .topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; background:linear-gradient(90deg,#1f3a5f,#3b2e63); color:#fff; }
-  .topbar a { color:#cfe9ff; text-decoration:none; font-size:14px; }
-  .msg { font-size:13px; margin-left:8px; }
-  .msg.ok { color:#1f9d57; } .msg.err { color:#d23; }
-  .mono { font-family:ui-monospace,Menlo,monospace; color:#667; font-size:13px; }
+  .admin-wrap { max-width: 980px; margin: 36px auto 64px; padding: 0 32px; }
+  .admin-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+    padding: 24px 26px; margin: 20px 0; box-shadow: var(--shadow-sm);
+  }
+  .admin-card > h2 {
+    font-family: var(--serif); font-weight: 600; font-size: 24px; margin: 0 0 6px;
+    color: var(--ink);
+  }
+  .admin-card .sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+  table.admin { width: 100%; border-collapse: collapse; }
+  table.admin th, table.admin td {
+    text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--line-soft);
+    font-size: 14px; vertical-align: middle;
+  }
+  table.admin th {
+    color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .14em;
+    font-weight: 600;
+  }
+  table.admin input, table.admin select, .row-form input, .row-form select, label input {
+    padding: 9px 11px; border: 1px solid var(--line); border-radius: 3px;
+    font-family: var(--sans); font-size: 14px; color: var(--ink); background: #fff;
+    width: 100%;
+  }
+  table.admin input:focus, table.admin select:focus, .row-form input:focus,
+  label input:focus, .row-form select:focus {
+    outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft);
+  }
+  .btn {
+    cursor: pointer; border: none; border-radius: 2px; padding: 9px 16px;
+    font-family: var(--sans); font-weight: 600; font-size: 11px;
+    text-transform: uppercase; letter-spacing: .1em;
+    background: var(--ink); color: #F3EEE2; transition: all .18s ease;
+  }
+  .btn:hover { background: var(--gold-deep); transform: translateY(-1px); }
+  .btn.alt { background: var(--gold); color: #211a10; }
+  .btn.alt:hover { background: var(--gold-deep); color: #F3EEE2; }
+  .btn.ghost { background: var(--sand); color: var(--ink-2); border: 1px solid var(--line); }
+  .btn.ghost:hover { background: var(--gold-soft); color: var(--gold-deep); transform: none; }
+  .row-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 18px; }
+  .row-form input, .row-form select { width: auto; }
+  label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .12em;
+          color: var(--muted); font-weight: 600; }
+  label input { margin-top: 6px; text-transform: none; letter-spacing: normal; color: var(--ink); font-weight: 400; }
+  .msg { font-size: 12px; margin-left: 8px; font-weight: 600; }
+  .msg.ok { color: var(--green); } .msg.err { color: var(--rust); }
+  .mono { font-family: ui-monospace, Menlo, monospace; color: var(--muted); font-size: 13px; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
 </style>
 </head>
 <body>
-  <div class="topbar">
-    <strong>⚙️ Admin — Pessoas &amp; Projeto</strong>
-    <a href="./">← Voltar ao painel</a>
-  </div>
+  <header class="topbar">
+    <div class="brand">Pedra <span class="brand-dot">&amp;</span> Luz <small>Admin</small></div>
+    <a href="./" class="role-btn">← Voltar ao painel</a>
+  </header>
 
   <div class="admin-wrap">
     <div class="admin-card">
-      <h2>👥 Utilizadores</h2>
+      <h2>Utilizadores</h2>
+      <div class="sub">Pessoas com acesso à plataforma. O telefone é a identidade (WhatsApp) — ao alterá-lo, todo o histórico, tarefas e notificações dessa pessoa acompanham o novo número.</div>
       <table class="admin" id="usersTable">
         <thead><tr><th>Nome</th><th>Função</th><th>Telefone</th><th></th></tr></thead>
         <tbody id="usersBody"></tbody>
@@ -54,10 +89,11 @@
     </div>
 
     <div class="admin-card">
-      <h2>🏗️ Projeto</h2>
-      <div id="projectForm" class="row-form" style="flex-direction:column; align-items:stretch; gap:10px;">
-        <label>Nome <input id="pName" style="width:100%" /></label>
-        <label>Morada <input id="pAddress" style="width:100%" /></label>
+      <h2>Projeto</h2>
+      <div class="sub">Detalhes do projeto visíveis para o cliente e a equipa.</div>
+      <div id="projectForm" style="display:flex; flex-direction:column; gap:14px;">
+        <label>Nome <input id="pName" /></label>
+        <label>Morada <input id="pAddress" /></label>
         <label>Orçamento (€) <input id="pBudget" type="number" /></label>
         <div>
           <button class="btn" onclick="saveProject()">Guardar projeto</button>

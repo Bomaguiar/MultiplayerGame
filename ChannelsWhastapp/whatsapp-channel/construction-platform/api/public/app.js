@@ -40,8 +40,15 @@ async function render() {
   projectId = p.id;
 
   $('project').innerHTML = `
+    <div class="eyebrow">Projeto em curso · Pedra &amp; Luz</div>
     <h1>${esc(p.name)}</h1>
-    <div class="meta">📍 ${esc(p.address || '—')} · estado <b>${esc(p.status)}</b> · orçamento €${Number(p.budget).toLocaleString('pt-PT')}</div>`;
+    <div class="meta">
+      <span>📍 ${esc(p.address || '—')}</span>
+      <span class="sep">·</span>
+      <span>Estado <b>${esc(p.status)}</b></span>
+      <span class="sep">·</span>
+      <span>Orçamento <b>€${Number(p.budget).toLocaleString('pt-PT')}</b></span>
+    </div>`;
 
   await Promise.all([loadBudget(), loadMilestones(), loadLogs(), loadTasks(), loadMaterials(), loadChangeOrders(), loadNotifBadge()]);
 }

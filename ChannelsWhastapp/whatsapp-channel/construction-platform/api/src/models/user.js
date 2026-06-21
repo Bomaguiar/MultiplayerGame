@@ -1,7 +1,7 @@
 // User model. Phone is the identity (matches WhatsApp). Role drives the menu
 // and every permission gate.
 
-import { query } from '../db.js';
+import { query, withTransaction } from '../db.js';
 
 export const ROLES = Object.freeze(['customer', 'worker', 'founder', 'admin']);
 
@@ -75,4 +75,59 @@ export async function updateUser(phone, { name, role } = {}) {
     vals
   );
   return rows[0] ?? null;
+}
+
+/**
+ * Change a user's phone number — the one piece of "identity" that used to be
+ * immutable. Because phone is denormalized (stored as a plain string) across
+ * many tables, we cascade the rename through all of them in a single
+ * transaction so history, tasks, logs, materials and notifications keep
+ * pointing at the same person.
+ *
+ * Returns the updated user row, or null if `oldPhone` doesn't exist. Throws if
+ * `newPhone` is blank or already belongs to someone else.
+ */
+export async function changeUserPhone(oldPhone, newPhone) {
+  const next = String(newPhone ?? '').trim();
+  if (!next) throw new Error('newPhone is required');
+
+  const existing = await findByPhone(oldPhone);
+  if (!existing) return null;
+  if (next === oldPhone) return existing;
+
+  const clash = await findByPhone(next);
+  if (clash) throw new Error('phone already in use');
+
+  return withTransaction(async (q) => {
+    // 1:1 string columns that reference a user's phone.
+    const renames = [
+      ['users',             'phone'],
+      ['projects',          'client_phone'],
+      ['material_requests', 'requested_by'],
+      ['material_requests', 'decided_by'],
+      ['daily_logs',        'author_phone'],
+      ['notifications',     'recipient_phone'],
+      ['customer_requests', 'customer_phone'],
+      ['tasks',             'assignee_phone'],
+      ['task_status_history', 'by_phone'],
+      ['conversation_memory', 'contact_phone'],
+    ];
+    for (const [table, col] of renames) {
+      await q(`UPDATE ${table} SET ${col} = $1 WHERE ${col} = $2`, [next, oldPhone]);
+    }
+
+    // worker_phones is a TEXT[] — rewrite any array that contains the old phone.
+    const { rows: projs } = await q('SELECT id, worker_phones FROM projects', []);
+    for (const pr of projs) {
+      const arr = pr.worker_phones || [];
+      if (arr.includes(oldPhone)) {
+        const updated = arr.map((p) => (p === oldPhone ? next : p));
+        await q('UPDATE projects SET worker_phones = $1 WHERE id = $2', [updated, pr.id]);
+      }
+    }
+
+    const { rows } = await q(
+      'SELECT id, phone, name, role FROM users WHERE phone = $1', [next]);
+    return rows[0] ?? null;
+  });
 }

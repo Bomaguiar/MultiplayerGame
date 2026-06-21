@@ -49,6 +49,27 @@ export async function query(text, params) {
 }
 
 /**
+ * Run `fn` inside a single transaction. `fn` receives a `q(text, params)` helper
+ * bound to the transaction's client. Commits on success, rolls back on any
+ * throw, and always releases the client. Used where several writes must land
+ * atomically (e.g. cascading a phone change across denormalized tables).
+ */
+export async function withTransaction(fn) {
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn((text, params) => client.query(text, params));
+    await client.query('COMMIT');
+    return result;
+  } catch (e) {
+    try { await client.query('ROLLBACK'); } catch { /* already broken */ }
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+/**
  * Cheap connectivity probe for the health check.
  * Returns true if the DB answered, false otherwise — never throws.
  */

@@ -33,7 +33,7 @@ async function loadUsers() {
     tr.innerHTML =
       `<td><input value="${u.name ?? ''}" id="n_${u.phone}" /></td>` +
       `<td><select id="r_${u.phone}">${roleOpts}</select></td>` +
-      `<td class="mono">${u.phone}</td>` +
+      `<td><input class="mono" value="${u.phone}" id="p_${u.phone}" /></td>` +
       `<td><button class="btn ghost" data-phone="${u.phone}">Guardar</button> <span class="msg" id="m_${u.phone}"></span></td>`;
     tr.querySelector('button').addEventListener('click', () => saveUser(u.phone));
     body.appendChild(tr);
@@ -43,8 +43,13 @@ async function loadUsers() {
 async function saveUser(phone) {
   const name = $(`n_${phone}`).value;
   const role = $(`r_${phone}`).value;
-  const { status, data } = await api('PATCH', `/admin/users/${phone}`, { name, role });
+  const newPhone = $(`p_${phone}`).value.trim();
+  const body = { name, role };
+  if (newPhone && newPhone !== phone) body.newPhone = newPhone;
+  const { status, data } = await api('PATCH', `/admin/users/${phone}`, body);
   flash($(`m_${phone}`), status === 200, status === 200 ? 'OK' : (data?.error || 'erro'));
+  // A phone change re-keys the row; reload so subsequent edits target the new number.
+  if (status === 200 && body.newPhone) await loadUsers();
 }
 
 async function addUser() {
