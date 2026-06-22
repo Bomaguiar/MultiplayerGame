@@ -3,6 +3,13 @@
 Three ways to see the platform working — all run on **your** infrastructure, no
 external services.
 
+> **Presenting live?** Follow [`DEMO_SCRIPT.md`](./DEMO_SCRIPT.md) — a timed
+> ~10-minute walkthrough (client transparency → AI assistant → manager → close).
+
+Two URLs once the server is up:
+- **Portal:** http://localhost:4000/app/
+- **AI assistant (WhatsApp simulator):** http://localhost:4000/app/bot.html
+
 ## Option A — No Docker needed (recommended for older Macs)
 
 Just Node.js — no Docker, no Postgres. Everything runs in memory. Perfect for
@@ -64,20 +71,37 @@ approval — each with its live HTTP status.
 
 The demo seeds real data from the **Santa Rita - Summer 2026** ClickUp workspace:
 
-- **🧭 Pedro (gestor)** — budget overview, 19 real ClickUp tasks grouped by area
-  (house exterior, main living room, kitchen, building systems), 13 material
-  requests from the real materials spreadsheet, 2 change orders pending customer
-  approval. Can propose changes and approve materials.
+- **🧭 Pedro (gestor)** — **budget vs actual** with a per-category breakdown and a
+  founder-only line-item table, 19 real ClickUp tasks grouped by area, 13 material
+  requests, change orders + client selections pending approval. Can propose
+  changes, approve materials, and generate AI client updates.
 
-- **👤 Ilya (cliente)** — read-only transparency: project status, milestones,
-  daily photos/logs, tasks, materials. Can approve or reject change orders
-  (the money decisions). Cannot see worker actions.
+- **👤 Ilya (cliente)** — transparency: budget, **photo gallery + lightbox**,
+  milestones, daily logs, tasks, materials. Approves **selections** (typed
+  e-signature) and change orders — the money decisions. Cannot see worker actions.
 
-- **👷 Franek (obra)** — can post daily logs, request materials, advance his
-  assigned tasks (todo → doing → done). Cannot approve or see budget.
+- **👷 Franek (obra)** — posts daily logs (with photos), requests materials,
+  advances his tasks. Cannot approve or see budget.
 
 Every button is a real, role-gated API call — the server rejects unauthorized
 actions regardless of what the UI shows.
+
+## The AI assistant — http://localhost:4000/app/bot.html
+
+A WhatsApp-style simulator wired to the **same agent** the real webhook uses.
+Chat in plain language (PT/EN); the right panel shows the tool it picked and the
+DB change it made:
+
+- **Receives:** natural-language work logs, photos, **voice notes** (transcribed),
+  material requests, task completions.
+- **Gives:** project status, budget, pending lists with **tap-to-act buttons**,
+  AI-written client updates.
+- **Reaches out first:** the **🔔 Simular alertas (18h)** button shows the agent
+  proactively messaging the right person about overdue tasks, pending approvals,
+  and the daily update.
+
+It also works over a **plain-text WhatsApp bridge**: interactive options degrade
+to command hints (*"responda aprovar 13"*) the agent already understands.
 
 ## Run the tests
 

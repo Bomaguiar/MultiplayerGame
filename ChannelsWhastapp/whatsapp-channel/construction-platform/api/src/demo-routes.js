@@ -131,6 +131,15 @@ export async function demoRoutes(app) {
 
     const syncResult = await syncClickUpBatch(project.id, SANTA_RITA_CLICKUP_TASKS);
 
+    // A few tasks assigned directly to Franek (by phone) so the worker view is
+    // populated and the agent's tap-to-complete buttons + overdue alerts demo.
+    const ago = (d) => { const x = new Date(); x.setDate(x.getDate() - d); return x.toISOString().slice(0, 10); };
+    const soon = (d) => { const x = new Date(); x.setDate(x.getDate() + d); return x.toISOString().slice(0, 10); };
+    await createTask({ projectId: project.id, title: 'Pintar portão da garagem', assigneePhone: ACTORS.worker.phone, priority: 'high', dueOn: ago(2) });
+    await createTask({ projectId: project.id, title: 'Selar madeiras da sala', assigneePhone: ACTORS.worker.phone, priority: 'normal', dueOn: ago(1) });
+    await createTask({ projectId: project.id, title: 'Instalar apliques nos quartos', assigneePhone: ACTORS.worker.phone, priority: 'normal', dueOn: soon(3) });
+    await createTask({ projectId: project.id, title: 'Verificar drenagem da piscina', assigneePhone: ACTORS.worker.phone, priority: 'urgent', dueOn: soon(1) });
+
     for (const mat of REAL_MATERIALS) {
       await createRequest({
         projectId: project.id, requestedBy: ACTORS.worker.phone, ...mat,
