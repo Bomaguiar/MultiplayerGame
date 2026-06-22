@@ -6,9 +6,12 @@ const $ = (id) => document.getElementById(id);
 const ROLES = ['worker', 'customer', 'founder', 'admin'];
 
 async function api(method, path, body) {
+  const headers = {};
+  if (body) headers['Content-Type'] = 'application/json';
+  if (token) headers['x-internal-token'] = token;
   const res = await fetch(path, {
     method,
-    headers: { 'Content-Type': 'application/json', ...(token ? { 'x-internal-token': token } : {}) },
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   });
   let data = null;
