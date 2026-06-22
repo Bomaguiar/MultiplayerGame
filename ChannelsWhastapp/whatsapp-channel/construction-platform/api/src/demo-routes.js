@@ -8,6 +8,7 @@ import { createRequest } from './models/material.js';
 import { createUser } from './models/user.js';
 import { createChangeOrder } from './models/changeOrder.js';
 import { createSelection } from './models/selection.js';
+import { createBudgetItem } from './models/budgetItem.js';
 import { syncClickUpBatch } from './integrations/clickup.js';
 
 const ACTORS = {
@@ -151,6 +152,33 @@ export async function demoRoutes(app) {
       options: ['Madeira de carvalho', 'Microcimento', 'Porcelânico'],
       price: 5400, dueOn: '2026-07-12', proposedBy: ACTORS.founder.phone,
     });
+
+    const BUDGET_ITEMS = [
+      { category: 'Exterior', description: 'Pintura portões e vedações', estimated: 3200, actual: 2850, status: 'completed', vendor: 'Franek' },
+      { category: 'Exterior', description: 'Remoção grades das janelas', estimated: 1800, actual: null, status: 'planned' },
+      { category: 'Exterior', description: 'Tinta exterior piscina (360m²)', estimated: 5400, actual: 4200, status: 'in_progress', vendor: 'Tintas CIN' },
+      { category: 'Exterior', description: 'Impermeabilização Sika Guard', estimated: 950, actual: 980, status: 'completed', vendor: 'Sika Portugal' },
+      { category: 'Eléctrica', description: 'Substituição tomadas e interruptores', estimated: 4800, actual: 3200, status: 'in_progress', vendor: 'Franek' },
+      { category: 'Eléctrica', description: 'Motores de estore (14 unid.)', estimated: 8400, actual: null, status: 'planned', vendor: 'Somfy' },
+      { category: 'Eléctrica', description: 'Instalação projector + HDMI', estimated: 1200, actual: 1150, status: 'completed' },
+      { category: 'Eléctrica', description: 'Ligação quadro eléctrico', estimated: 2500, actual: null, status: 'planned' },
+      { category: 'Eléctrica', description: 'Luzes exterior + 3 tomadas', estimated: 1600, actual: null, status: 'planned' },
+      { category: 'Canalização', description: 'Verificação esgotos', estimated: 800, actual: null, status: 'planned' },
+      { category: 'Canalização', description: 'Torneiras casa de banho (5 unid.)', estimated: 1500, actual: 1380, status: 'completed', vendor: 'Grohe' },
+      { category: 'Interior', description: 'Lixar e selar madeiras (portas e rodapé)', estimated: 6200, actual: null, status: 'in_progress', vendor: 'Franek' },
+      { category: 'Interior', description: 'Pintura interior paredes', estimated: 8500, actual: null, status: 'planned' },
+      { category: 'Interior', description: 'Armários cozinha - lixar e pintar', estimated: 3800, actual: 2400, status: 'in_progress', vendor: 'Franek' },
+      { category: 'Iluminação', description: 'Apliques quartos (7 unid.)', estimated: 2100, actual: null, status: 'planned' },
+      { category: 'Iluminação', description: 'Apliques sala (11 unid.)', estimated: 3300, actual: null, status: 'planned' },
+      { category: 'Iluminação', description: 'LEDs tecto sala (15 unid.)', estimated: 4500, actual: null, status: 'planned' },
+      { category: 'Iluminação', description: 'Apliques WC - substituição', estimated: 800, actual: 750, status: 'completed', vendor: 'Ilumina' },
+      { category: 'WC', description: 'Botão descarga moderno', estimated: 350, actual: 320, status: 'completed', vendor: 'Geberit' },
+      { category: 'WC', description: 'Torneira lavatório (2 unid.)', estimated: 600, actual: null, status: 'planned', vendor: 'Grohe' },
+      { category: 'Contingência', description: 'Reserva para imprevistos (10%)', estimated: 8500, actual: 1200, status: 'in_progress', notes: 'Usado: reparação telhado pontual' },
+    ];
+    for (const bi of BUDGET_ITEMS) {
+      await createBudgetItem({ projectId: project.id, ...bi });
+    }
 
     return { seeded: true, projectId: project.id, clickupSync: syncResult };
   });

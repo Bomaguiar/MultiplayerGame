@@ -208,7 +208,46 @@ main { max-width: 1180px; margin: 36px auto 64px; padding: 0 32px; }
   color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums;
 }
 .budget-val.pending { color: var(--gold-deep); }
+.budget-val.over { color: var(--rust); }
 .budget-item .dim { text-transform: uppercase; letter-spacing: .12em; font-size: 10px; }
+
+.budget-bar-wrap {
+  display: flex; align-items: center; gap: 12px; margin-top: 18px;
+}
+.budget-bar-outer {
+  flex: 1; height: 10px; background: var(--sand); border-radius: 10px; overflow: hidden;
+}
+.budget-bar-inner { height: 100%; border-radius: 10px; transition: width .4s ease; }
+.budget-bar-label {
+  font-size: 12px; font-weight: 600; color: var(--ink-2);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+
+.budget-cats { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; }
+.budget-cat-row {
+  display: grid; grid-template-columns: 120px 1fr 100px 40px;
+  align-items: center; gap: 10px; font-size: 13px;
+}
+.budget-cat-name { font-weight: 600; color: var(--ink); }
+.budget-cat-nums { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: 12px; }
+.budget-cat-bar { height: 6px; background: var(--sand); border-radius: 6px; overflow: hidden; }
+.budget-cat-bar div { height: 100%; border-radius: 6px; transition: width .3s ease; }
+.budget-cat-pct {
+  font-size: 11px; font-weight: 600; text-align: right;
+  font-variant-numeric: tabular-nums; color: var(--ink-2);
+}
+.budget-cat-pct.over { color: var(--rust); }
+
+.budget-table {
+  width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px;
+}
+.budget-table th {
+  text-align: left; font-size: 10px; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--muted); padding: 8px 6px;
+  border-bottom: 1px solid var(--line);
+}
+.budget-table td { padding: 8px 6px; border-bottom: 1px solid var(--line-soft); }
+.budget-table .over-val { color: var(--rust); font-weight: 600; }
 
 /* ── Notifications ───────────────────────────────────────────────────────── */
 .notif-wrapper { position: relative; }

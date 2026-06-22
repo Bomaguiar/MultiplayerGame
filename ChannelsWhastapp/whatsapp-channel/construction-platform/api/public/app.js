@@ -277,16 +277,112 @@ async function loadMaterials() {
 
 async function loadBudget() {
   if (me.role === 'worker') { $('budget').innerHTML = ''; return; }
-  const { data, status } = await api('GET', `/projects/${projectId}/budget`);
+  const [{ data, status }, { data: bd }] = await Promise.all([
+    api('GET', `/projects/${projectId}/budget`),
+    api('GET', `/projects/${projectId}/budget-breakdown`),
+  ]);
   if (status !== 200 || !data) { $('budget').innerHTML = ''; return; }
-  const fmt = (v) => `€${Number(v).toLocaleString('pt-PT')}`;
-  $('budget').innerHTML = `
-    <h2>💰 Orçamento</h2>
+  const fmt = (v) => `€${Number(v || 0).toLocaleString('pt-PT')}`;
+  const t = bd?.totals || {};
+  const spent = Number(t.total_actual || 0);
+  const estimated = Number(t.total_estimated || 0);
+  const budgetNum = Number(data.current_budget || 0);
+  const remaining = budgetNum - spent;
+  const pctUsed = budgetNum > 0 ? Math.min(100, Math.round((spent / budgetNum) * 100)) : 0;
+  const barColor = pctUsed > 90 ? 'var(--rust)' : pctUsed > 70 ? 'var(--gold)' : 'var(--green)';
+
+  let html = `<h2>💰 Orçamento</h2>
     <div class="budget-grid">
-      <div class="budget-item"><span class="budget-val">${fmt(data.current_budget)}</span><span class="dim">Orçamento actual</span></div>
-      <div class="budget-item"><span class="budget-val">${fmt(data.approved_changes)}</span><span class="dim">Alterações aprovadas</span></div>
-      <div class="budget-item"><span class="budget-val pending">${fmt(data.pending_changes)}</span><span class="dim">${data.pending_count} pendente(s)</span></div>
+      <div class="budget-item"><span class="budget-val">${fmt(data.current_budget)}</span><span class="dim">Orçamento total</span></div>
+      <div class="budget-item"><span class="budget-val">${fmt(spent)}</span><span class="dim">Gasto até agora</span></div>
+      <div class="budget-item"><span class="budget-val ${remaining < 0 ? 'over' : ''}">${fmt(remaining)}</span><span class="dim">Restante</span></div>
+      <div class="budget-item"><span class="budget-val pending">${fmt(data.pending_changes)}</span><span class="dim">${data.pending_count} alteração(ões)</span></div>
+    </div>
+    <div class="budget-bar-wrap">
+      <div class="budget-bar-outer"><div class="budget-bar-inner" style="width:${pctUsed}%;background:${barColor}"></div></div>
+      <span class="budget-bar-label">${pctUsed}% utilizado</span>
     </div>`;
+
+  if (bd?.categories?.length) {
+    html += '<div class="budget-cats">';
+    for (const c of bd.categories) {
+      const catEst = Number(c.estimated || 0);
+      const catAct = Number(c.actual || 0);
+      const catPct = catEst > 0 ? Math.min(100, Math.round((catAct / catEst) * 100)) : 0;
+      const catBarColor = catAct > catEst ? 'var(--rust)' : catPct > 70 ? 'var(--gold)' : 'var(--green)';
+      const overClass = catAct > catEst ? ' over' : '';
+      html += `<div class="budget-cat-row">
+        <span class="budget-cat-name">${esc(c.category)}</span>
+        <span class="budget-cat-nums">${fmt(catAct)} <span class="dim">/ ${fmt(catEst)}</span></span>
+        <div class="budget-cat-bar"><div style="width:${catPct}%;background:${catBarColor}"></div></div>
+        <span class="budget-cat-pct${overClass}">${catPct}%</span>
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  if (me.role === 'founder') {
+    html += `<button class="act" onclick="toggleBudgetItems()" id="budgetItemsToggle">▸ Ver itens detalhados</button>`;
+    html += `<div id="budgetItemsDetail" style="display:none"></div>`;
+  }
+
+  $('budget').innerHTML = html;
+}
+
+async function toggleBudgetItems() {
+  const el = $('budgetItemsDetail');
+  const btn = $('budgetItemsToggle');
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    btn.textContent = '▾ Esconder itens';
+    await loadBudgetItems();
+  } else {
+    el.style.display = 'none';
+    btn.textContent = '▸ Ver itens detalhados';
+  }
+}
+
+async function loadBudgetItems() {
+  const { data: items } = await api('GET', `/projects/${projectId}/budget-items`);
+  const el = $('budgetItemsDetail');
+  if (!items || !items.length) { el.innerHTML = '<div class="dim">Sem itens.</div>'; return; }
+  const fmt = (v) => v != null ? `€${Number(v).toLocaleString('pt-PT')}` : '—';
+  let html = `<button class="act" onclick="addBudgetItem()">+ Novo item</button>`;
+  html += '<table class="budget-table"><thead><tr><th>Categoria</th><th>Descrição</th><th>Estimado</th><th>Real</th><th>Estado</th><th></th></tr></thead><tbody>';
+  for (const it of items) {
+    const over = it.actual != null && Number(it.actual) > Number(it.estimated);
+    const statusClass = it.status === 'completed' ? 'done' : it.status === 'over_budget' ? 'denied' : it.status === 'in_progress' ? 'doing' : 'todo';
+    html += `<tr>
+      <td><span class="tag">${esc(it.category)}</span></td>
+      <td>${esc(it.description)}${it.vendor ? ` <span class="dim">${esc(it.vendor)}</span>` : ''}</td>
+      <td>${fmt(it.estimated)}</td>
+      <td class="${over ? 'over-val' : ''}">${fmt(it.actual)}</td>
+      <td><span class="status s-${statusClass}">${esc(it.status)}</span></td>
+      <td><button class="act sm" onclick="editBudgetItem(${it.id})">✎</button></td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+async function addBudgetItem() {
+  const category = prompt('Categoria (ex: Eléctrica, Interior):'); if (!category) return;
+  const description = prompt('Descrição:'); if (!description) return;
+  const estimated = Number(prompt('Valor estimado (€):', '0')) || 0;
+  await api('POST', `/projects/${projectId}/budget-items`, { category, description, estimated });
+  await loadBudgetItems();
+  await loadBudget();
+}
+
+async function editBudgetItem(id) {
+  const actualStr = prompt('Valor real gasto (€):');
+  if (actualStr === null) return;
+  const actual = Number(actualStr) || 0;
+  const status = prompt('Estado (planned / in_progress / completed / over_budget):', 'completed');
+  if (!status) return;
+  await api('PATCH', `/budget-items/${id}`, { actual, status });
+  await loadBudgetItems();
+  await loadBudget();
 }
 
 async function loadChangeOrders() {
@@ -437,6 +533,7 @@ window.decideCO = decideCO; window.proposeChange = proposeChange;
 window.proposeSelection = proposeSelection; window.approveSelection = approveSelection;
 window.declineSelection = declineSelection;
 window.openLightbox = openLightbox; window.closeLightbox = closeLightbox; window.lbNav = lbNav;
+window.toggleBudgetItems = toggleBudgetItems; window.addBudgetItem = addBudgetItem; window.editBudgetItem = editBudgetItem;
 
 // Keyboard navigation for the lightbox.
 document.addEventListener('keydown', (e) => {
