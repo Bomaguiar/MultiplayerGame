@@ -7,6 +7,11 @@
 // Perfect for machines that can't run Docker (e.g. older Macs).
 // Data lives in memory and resets on restart.
 
+// This entry is always demo mode. Set it here (not via a shell-specific
+// `DEMO_MODE=1 node ...` prefix) so the command works the same on Windows
+// cmd.exe / PowerShell as it does on macOS / Linux.
+process.env.DEMO_MODE = '1';
+
 import { newDb } from 'pg-mem';
 import { setPool } from '../src/db.js';
 import { runMigrations } from '../migrations/run.js';
