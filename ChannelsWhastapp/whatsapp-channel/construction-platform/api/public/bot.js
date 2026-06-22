@@ -105,6 +105,35 @@ function renderQuick(role) {
     btn.onclick = () => sendMessage(text);
     q.appendChild(btn);
   }
+  // Founder-only: simulate the proactive 18:00 run (the bot reaches out first).
+  if (role === 'founder') {
+    const btn = document.createElement('button');
+    btn.textContent = '🔔 Simular alertas (18h)';
+    btn.onclick = runProactive;
+    q.appendChild(btn);
+  }
+}
+
+// Show the bot proactively reaching out: queue alerts, then render the outbound
+// messages as if the bridge had delivered them to each recipient.
+async function runProactive() {
+  const { status, data } = await api('POST', '/agent/proactive', {});
+  if (status !== 200 || !data) { addBubble('them', 'Não foi possível correr os alertas.'); return; }
+  const log = $('actionLog');
+  const empty = log.querySelector('.action-empty'); if (empty) empty.remove();
+  if (!data.queued) {
+    addBubble('them', '✅ Sem novos alertas a enviar (já tratados hoje).');
+    return;
+  }
+  addBubble('them', `🔔 Enviei ${data.queued} alerta(s) proativo(s) às pessoas certas:`);
+  for (const m of data.messages) {
+    const card = document.createElement('div');
+    card.className = 'action-card';
+    card.innerHTML = `<div class="ac-tool effect">✱ outbound · ${esc(m.to)}</div>
+      <div class="ac-quote">${esc(m.title)}</div>
+      <div class="ac-msg">${esc((m.body || '').slice(0, 140))}</div>`;
+    log.prepend(card);
+  }
 }
 
 async function sendMessage(text) {

@@ -58,6 +58,39 @@ Full vision: [`BLUEPRINT.md`](./BLUEPRINT.md). Demo guide: [`DEMO.md`](./DEMO.md
 | T20 | AI WhatsApp daily client summary (`brain/dailySummary`) | ✅ |
 | T21 | **Conversational AI agent** (`brain/agent` + `agentTools`) — NL→tools | ✅ |
 | T22 | WhatsApp simulator artifact (`public/bot.html`) | ✅ |
+| T23 | Interactive buttons/lists + voice-note transcription | ✅ |
+| T24 | Text-only bridge fallback (`interactiveToText`) + outbox | ✅ |
+| T25 | **Proactive outbound alerts** (`brain/proactive` + outbox) | ✅ |
+
+## June 2026 Session 3 — richer bot + proactive outreach
+- **Buttons/voice:** tools return WhatsApp-style `interactive` payloads (tap to
+  complete tasks / approve materials, quick-reply chips). `interpretButton()`
+  round-trips taps (`approve:<id>`, `complete:<id>`, `cmd:<text>`), re-validated
+  against role. Voice notes via `audioRef` → `intake/transcriber` seam → routed
+  like text. Simulator has 📎 photo, 🎙️ voice (simvoice: refs decoded by a
+  demo-only transcriber), and renders buttons.
+- **Text-only bridge:** Pedro's WhatsApp MCP (`projects/whatsapp-assistance`,
+  whatsapp-mcp/Baileys) is plain-text. `interactiveToText()` folds options into
+  the reply as command hints (`responda "aprovar 13"`) the agent already parses.
+- **Proactive (`brain/proactive.js`):** `scanProject()` finds overdue tasks
+  (→managers+assignees), pending materials (→managers), proposed change orders +
+  pending selections (→client), and the daily client update. `enqueueAlerts()`
+  writes them as pending **whatsapp** notifications, deduped by date-stamped key
+  (one nudge per condition per day — survives fast outbox polling).
+- **Outbox:** `GET /whatsapp/outbox` + `POST /whatsapp/outbox/:id/sent`
+  (watcher-secret) — the outbound counterpart to `/whatsapp/incoming` the bridge
+  drains. Trigger via `POST /projects/:id/proactive/run` or `POST /agent/proactive`
+  (founder convenience). Simulator: founder "🔔 Simular alertas (18h)" button.
+- **Bugs fixed:** `const reply` shadowed Fastify's `reply` param (syntax error);
+  overdue detection compared a pg Date with `String().slice` (same Date pitfall as
+  dailySummary) — added `dayKey()` normalization.
+- 196 tests; full proactive→outbox→sent loop + dedupe verified live over HTTP.
+
+### ⚠️ Open: the `whatsapp` MCP connector is NOT loaded in construction-platform
+sessions (confirmed via ToolSearch). To wire live send/receive, either (a) a poller
+script using the bridge's `list_messages`/`send_message` against the webhook+outbox,
+or (b) load the connector into this environment. Network: the bridge runs on Pedro's
+machine; a cloud session may not reach it depending on the network policy.
 
 ## June 2026 Session 2 — next-gen AI agent + artifact
 Pedro's goal: "create a next-gen tool and AI bot for construction… think WhatsApp

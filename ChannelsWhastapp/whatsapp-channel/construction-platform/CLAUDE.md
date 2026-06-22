@@ -89,3 +89,11 @@ native interactive buttons. Notes:
    QuickBooks/Xero are NOT AT-certified; CA side can use them. Pluggable per region.
 3. Real auth + multi-tenancy (biggest gap before selling to partners).
 4. Wire the AI daily summary out to the real WhatsApp sender (now a wa.me link).
+
+## Design References
+When working on UI/web design tasks, reference these for inspiration and patterns:
+
+- https://craftwork.design/curated/websites/agency — agency site inspiration & visual hierarchy
+- https://godly.website — high-end creative/experimental web design
+- https://mobbin.com — mobile & web UI patterns from real apps
+- https://21st.dev/community/components — UI component library, copy-paste quality

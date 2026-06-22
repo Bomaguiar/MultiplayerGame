@@ -35,6 +35,17 @@ export async function listNotifications({ recipientPhone, projectId = null, stat
   return rows;
 }
 
+/** Pending outbound messages for a channel (default whatsapp), oldest first —
+ *  the delivery bridge drains this. Not scoped to one recipient. */
+export async function listOutbox({ channel = 'whatsapp', limit = 50 } = {}) {
+  const { rows } = await query(
+    `SELECT * FROM notifications WHERE channel = $1 AND status = 'pending'
+     ORDER BY created_at ASC LIMIT $2`,
+    [channel, limit],
+  );
+  return rows;
+}
+
 export async function markRead(id) {
   const { rows } = await query(
     `UPDATE notifications SET status = 'read' WHERE id = $1 RETURNING *`,

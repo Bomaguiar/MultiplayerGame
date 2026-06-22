@@ -10,16 +10,44 @@ import { listProjectsForUser } from '../models/project.js';
 import { parseCommand, executeCommand } from '../whatsapp/router.js';
 import { runAgent } from '../brain/agent.js';
 import { interactiveToText } from '../brain/agentTools.js';
+import { listOutbox, markSent } from '../models/notification.js';
 
 const WATCHER_SECRET = process.env.WATCHER_SECRET || 'dev-watcher-secret';
 
 export async function whatsappRoutes(app) {
+  const checkWatcher = (req, reply) => {
+    if (req.headers['x-watcher-token'] !== WATCHER_SECRET) {
+      reply.code(401).send({ error: 'unauthorized' });
+      return false;
+    }
+    return true;
+  };
+
+  // Outbound queue: the delivery bridge polls pending proactive messages and
+  // marks each sent once delivered via send_message.
+  app.get('/whatsapp/outbox', async (req, reply) => {
+    if (!checkWatcher(req, reply)) return;
+    const limit = Math.min(Number(req.query?.limit) || 50, 200);
+    const rows = await listOutbox({ limit });
+    return {
+      messages: rows.map((n) => ({
+        id: n.id,
+        to: n.recipient_phone,
+        text: n.body ? `*${n.title}*\n${n.body}` : n.title,
+      })),
+    };
+  });
+
+  app.post('/whatsapp/outbox/:id/sent', async (req, reply) => {
+    if (!checkWatcher(req, reply)) return;
+    const updated = await markSent(req.params.id);
+    if (!updated) return reply.code(404).send({ error: 'not_found' });
+    return { ok: true, id: updated.id };
+  });
+
   app.post('/whatsapp/incoming', async (req, reply) => {
     // Auth: check the shared watcher secret.
-    const token = req.headers['x-watcher-token'];
-    if (token !== WATCHER_SECRET) {
-      return reply.code(401).send({ error: 'unauthorized' });
-    }
+    if (!checkWatcher(req, reply)) return;
 
     const { from, body, mediaRefs, audioRef, messageId, timestamp } = req.body || {};
     const media = Array.isArray(mediaRefs) ? mediaRefs : [];
