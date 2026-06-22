@@ -47,6 +47,22 @@ npm run demo:server  # http://localhost:4000/app/  (pg-mem, no Docker)
 - Feature pattern: migration → `models/X.js` → `routes/X.js` → register in
   `src/app.js` → seed in `src/demo-routes.js` → wire `public/app.js` → test.
 
+## WhatsApp delivery (the real bridge)
+Pedro runs a **`whatsapp` MCP connector** (whatsapp-mcp / Baileys-style web bridge)
+documented in `projects/whatsapp-assistance/MEMORY.md`. Tools: `list_messages`,
+`send_message`, `send_audio_message`, `download_media`, `search_contacts`. JIDs:
+`number@s.whatsapp.net` (individual), `id@g.us` (group). **It is plain-text** — no
+native interactive buttons. Notes:
+- That connector lives in Pedro's WhatsApp-assistance environment; it is usually
+  NOT loaded in a construction-platform session. Don't assume `send_message` is callable.
+- **Integration model:** the bridge (or a small poller using `list_messages`) POSTs
+  inbound messages to `POST /whatsapp/incoming` (header `x-watcher-token: WATCHER_SECRET`,
+  body `{from, body, mediaRefs?, audioRef?}`) and sends the JSON `reply` back via
+  `send_message`. Voice notes → pass `audioRef`; the `intake/transcriber` seam handles STT.
+- Because the bridge is text-only, the webhook **folds interactive options into the
+  reply as command hints** (`interactiveToText()` → `responda "aprovar 13"`), which
+  the agent already parses. The `interactive` object is still returned for rich clients.
+
 ## House rules (do NOT violate)
 - **Branch:** develop on `claude/wonderful-pascal-xj4rdr`. Never push elsewhere
   without explicit permission. Don't open PRs unless asked.

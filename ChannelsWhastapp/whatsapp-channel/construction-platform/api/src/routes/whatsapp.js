@@ -9,6 +9,7 @@ import { findByPhone } from '../models/user.js';
 import { listProjectsForUser } from '../models/project.js';
 import { parseCommand, executeCommand } from '../whatsapp/router.js';
 import { runAgent } from '../brain/agent.js';
+import { interactiveToText } from '../brain/agentTools.js';
 
 const WATCHER_SECRET = process.env.WATCHER_SECRET || 'dev-watcher-secret';
 
@@ -53,8 +54,12 @@ export async function whatsappRoutes(app) {
     }
 
     const agentResult = await runAgent({ user, projectId, text: body || '', mediaRefs: media, audioRef: audioRef || null });
+    // The webhook's consumer is the WhatsApp bridge, which sends plain text and
+    // can't render native buttons — fold the interactive options into the reply
+    // as command hints. `interactive` is still returned for richer clients.
+    const replyText = agentResult.reply + interactiveToText(agentResult.interactive);
     return {
-      reply: agentResult.reply,
+      reply: replyText,
       ...(agentResult.tool ? { tool: agentResult.tool } : {}),
       ...(agentResult.action ? { action: agentResult.action } : {}),
       ...(agentResult.interactive ? { interactive: agentResult.interactive } : {}),

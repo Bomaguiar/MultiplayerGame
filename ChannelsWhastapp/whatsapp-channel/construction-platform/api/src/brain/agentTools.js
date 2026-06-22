@@ -264,6 +264,26 @@ export const TOOLS = {
   },
 };
 
+/**
+ * Render an interactive payload as plain-text command hints, for delivery
+ * bridges that can't show native buttons (e.g. a WhatsApp Web/Baileys bridge).
+ * Each hint is phrased as a command the agent already understands, so the user
+ * can simply reply with it — no extra state needed.
+ */
+export function interactiveToText(interactive) {
+  if (!interactive) return '';
+  const opts = interactive.type === 'list' ? interactive.rows : interactive.buttons;
+  const hints = (opts || []).map((o) => {
+    const m = String(o.id || '').match(/^(approve|complete):(\d+)$/);
+    if (m && m[1] === 'approve') return `• responda "aprovar ${m[2]}"`;
+    if (m && m[1] === 'complete') return `• responda "tarefa ${m[2]} feita"`;
+    const cmd = String(o.id || '').match(/^cmd:(.+)$/);
+    if (cmd) return `• "${cmd[1]}"`;
+    return `• ${o.title}`;
+  });
+  return hints.length ? `\n\n${hints.join('\n')}` : '';
+}
+
 /** Tools available to a given role, as a name→tool map. */
 export function toolsForRole(role) {
   const out = {};

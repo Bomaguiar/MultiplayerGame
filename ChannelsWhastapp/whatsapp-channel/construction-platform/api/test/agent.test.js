@@ -10,6 +10,7 @@ import { createRequest, listRequests } from '../src/models/material.js';
 import { setModelClient, resetModelClient } from '../src/brain/model.js';
 import { setTranscriber, resetTranscriber } from '../src/intake/transcriber.js';
 import { resolveIntent, parseMaterial, runAgent, interpretButton } from '../src/brain/agent.js';
+import { interactiveToText } from '../src/brain/agentTools.js';
 
 beforeAll(async () => {
   const mem = newDb();
@@ -224,6 +225,24 @@ describe('interpretButton + tap handling', () => {
   it('tapping a cmd quick-reply runs the underlying intent', async () => {
     const res = await runAgent({ user: FOUNDER, projectId: project.id, text: 'cmd:como está o orçamento?' });
     expect(res.tool).toBe('get_budget');
+  });
+});
+
+// ── Plain-text fallback for text-only bridges ────────────────────────────────
+describe('interactiveToText (text-only bridge fallback)', () => {
+  it('renders an approve list as agent-understood command hints', () => {
+    const txt = interactiveToText({ type: 'list', rows: [{ id: 'approve:13', title: 'x' }] });
+    expect(txt).toContain('aprovar 13');
+  });
+  it('renders complete buttons and cmd quick-replies', () => {
+    const txt = interactiveToText({ type: 'buttons', buttons: [
+      { id: 'complete:4', title: 'x' }, { id: 'cmd:estado da obra', title: 'y' },
+    ] });
+    expect(txt).toContain('tarefa 4 feita');
+    expect(txt).toContain('estado da obra');
+  });
+  it('is empty when there is no interactive payload', () => {
+    expect(interactiveToText(null)).toBe('');
   });
 });
 
