@@ -3,7 +3,7 @@
 > Persistent context so work survives across sessions. **Update this file at the
 > end of any work session.** (Pedro asked for this — "you keep forgetting".)
 
-Last updated: 2026-06-20
+Last updated: 2026-06-22
 
 ## What This Is
 A WhatsApp-native operating system for construction projects. Three lenses on
@@ -21,7 +21,7 @@ Full vision: [`BLUEPRINT.md`](./BLUEPRINT.md). Demo guide: [`DEMO.md`](./DEMO.md
 
 ## Stack
 - **API:** Node.js (ESM) + Fastify 4.28, Postgres (`pg`), migrations in `api/migrations/`
-- **Tests:** vitest — `npm test` (108 tests, all green)
+- **Tests:** vitest — `npm test` (154 tests, all green)
 - **Demo (Docker-free):** `npm run demo:server` → pg-mem in memory → http://localhost:4000/app/
 - **Auth:** HMAC internal token (`signToken`/`verifyToken`), role gate `requireRole()`
 - **Roles:** customer, worker, founder, admin. Project scoping via `canAccessProject()`.
@@ -51,6 +51,41 @@ Full vision: [`BLUEPRINT.md`](./BLUEPRINT.md). Demo guide: [`DEMO.md`](./DEMO.md
 | T13 | Materials brain — aggregated rollup (`/materials/rollup`) | ✅ |
 | T14 | Conversation memory (`brain/memory`) | ✅ |
 | T15 | Admin page — manage users (names/roles) + project details | ✅ |
+| T16 | Selections & approvals — typed ESIGN/UETA e-signature | ✅ |
+| T17 | Photo gallery + lightbox (built from daily-log `photo_refs`) | ✅ |
+| T18 | Pedra & Luz rebrand + editable phone numbers (cascade) | ✅ |
+| T19 | Budget-vs-actual line items + category breakdown | ✅ |
+| T20 | AI WhatsApp daily client summary (`brain/dailySummary`) | ✅ |
+
+## June 2026 Session — "best-selling app" push
+Pedro wants this sold to partner architect/builder firms (Lisbon + California).
+Restyled to the **Pedra & Luz** architecture-studio aesthetic (warm stone/ivory,
+Cormorant Garamond + Inter). Key additions this session:
+
+- **Editable phones** — phone was immutable identity across 9+ denormalized
+  tables; `changeUserPhone()` cascades all of them inside `withTransaction()`.
+- **Photo gallery** (`public/app.js`) — flattens every log's `photo_refs` into a
+  grid + keyboard lightbox. `resolveMedia()` maps demo keys → bundled SVGs
+  (`public/media/*.svg`), passes real URLs through, generates placeholders.
+- **Selections** (migration 012, `models/selection.js`) — founder proposes finish
+  options; customer approves with typed e-signature (name + timestamp).
+- **Budget-vs-actual** (migration 013, `models/budgetItem.js`,
+  `routes/budgetItems.js`) — line items w/ estimated vs actual, grouped by
+  category; budget card shows progress bar + per-category bars + founder edit
+  table. Demo seeds 21 items. NOTE: pg-mem doesn't support `FILTER (WHERE ...)`
+  reliably → use `SUM(CASE WHEN ... THEN ... ELSE 0 END)`.
+- **AI daily summary** (`brain/dailySummary.js`) — turns a day's logs into a
+  warm PT client update; founder hits "✨ Gerar resumo para cliente" → copy or
+  WhatsApp `wa.me` deep-link. Same brain seam: deterministic fallback, AI upgrade
+  when key is set. `dayKey()` normalizes pg Date objects to YYYY-MM-DD.
+
+### Research findings (for roadmap)
+- Top SaaS buyer driver is **budget/cost visibility** (40.9% market share), NOT
+  white-label (demoted). AI client updates cut update time ~97% (Buildertrend).
+- **Portugal invoicing is hard:** QuickBooks/Xero are NOT AT-certified and can't
+  legally issue PT invoices. Need ATCUD + QR + SAF-T via a certified provider
+  (**InvoiceXpress** or **Moloni**, both have REST APIs). California side can use
+  QuickBooks/Xero fine. Design invoicing as a pluggable per-region provider.
 
 ## Key Files (api/src)
 - `brain/model.js` — pluggable AI interface; OFF by default → deterministic fallback. `setModelClient()` to enable, mockable in tests.
@@ -85,7 +120,16 @@ Self-building loop: `cd ../builder && python builder.py --once` (or use the
 - Uses `@anthropic-ai/sdk`, model `claude-haiku-4-5` (cheap; override `BRAIN_MODEL`),
   `max_tokens` 512 (override `BRAIN_MAX_TOKENS`). Set the key in `.env`.
 
-## Open Threads / Next
+## Open Threads / Next (priority order, from research)
+1. **Punch list / snag management** — quick win, photo-linked defect list.
+2. **Portuguese invoice issuance** — InvoiceXpress/Moloni for ATCUD+QR+SAF-T
+   (CA uses QuickBooks/Xero). Pluggable per-region provider.
+3. **Real auth + multi-tenancy** — biggest gap before selling to partner firms
+   (currently demo HMAC tokens only).
+4. Task assignment/completion tracking, scheduling timeline, GPS time tracking.
+5. Wire the daily summary out to the real WhatsApp sender (now a wa.me link).
+
+### Standing items
 - Pedro needs Node.js installed on the Mac to run locally.
 - Add a real STT into `intake/transcriber.js` for voice notes.
 - Hook triage notifications out to the WhatsApp sender (currently in_app DB rows).

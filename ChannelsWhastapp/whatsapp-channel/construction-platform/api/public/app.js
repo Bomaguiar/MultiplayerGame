@@ -1,6 +1,7 @@
 let token = null;
 let me = null;
 let projectId = null;
+let clientPhone = null;
 let logsCache = [];
 let galleryState = [];
 
@@ -40,6 +41,7 @@ async function render() {
   $('banner').textContent = '';
   const p = projects[0];
   projectId = p.id;
+  clientPhone = p.client_phone || null;
 
   $('project').innerHTML = `
     <div class="eyebrow">Projeto em curso · Pedra &amp; Luz</div>
@@ -178,6 +180,10 @@ async function loadLogs() {
   let html = '<h2>📔 Diário de Obra</h2>';
   if (me.role === 'worker') {
     html += `<button class="act" onclick="postLog()">+ Novo registo</button>`;
+  }
+  if (me.role === 'founder') {
+    html += `<button class="act" onclick="generateDailySummary()">✨ Gerar resumo para cliente</button>
+      <div id="dailySummaryBox"></div>`;
   }
   let offset = 0; // map each log's photos to their index in the flat gallery
   for (const l of logsCache) {
@@ -422,6 +428,29 @@ async function requestMaterial() {
   await render();
 }
 async function decideCO(id, decision) { await api('PATCH', `/change-orders/${id}/decision`, { decision }); await render(); }
+async function generateDailySummary() {
+  const box = $('dailySummaryBox');
+  box.innerHTML = '<div class="dim">A gerar resumo…</div>';
+  const { status, data } = await api('GET', `/projects/${projectId}/daily-summary`);
+  if (status !== 200 || !data) { box.innerHTML = '<div class="dim">Não foi possível gerar.</div>'; return; }
+  const wa = `https://wa.me/${(clientPhone || '').replace(/\D/g, '')}?text=${encodeURIComponent(data.summary)}`;
+  box.innerHTML = `<div class="summary-box">
+    <div class="summary-date">${esc(data.date)}</div>
+    <div class="summary-text" id="summaryText">${esc(data.summary)}</div>
+    <div class="summary-actions">
+      <button class="act sm" onclick="copySummary()">📋 Copiar</button>
+      ${clientPhone ? `<a class="act sm ok summary-wa" href="${esc(wa)}" target="_blank">📲 Enviar no WhatsApp</a>` : ''}
+    </div>
+  </div>`;
+}
+function copySummary() {
+  const t = $('summaryText')?.textContent || '';
+  navigator.clipboard?.writeText(t);
+  const btn = event.target;
+  const old = btn.textContent;
+  btn.textContent = '✓ Copiado';
+  setTimeout(() => { btn.textContent = old; }, 1500);
+}
 async function proposeSelection() {
   const name = prompt('Selecção (ex: Bancada da cozinha):'); if (!name) return;
   const room = prompt('Divisão (ex: Cozinha):', '') || null;
@@ -534,6 +563,7 @@ window.proposeSelection = proposeSelection; window.approveSelection = approveSel
 window.declineSelection = declineSelection;
 window.openLightbox = openLightbox; window.closeLightbox = closeLightbox; window.lbNav = lbNav;
 window.toggleBudgetItems = toggleBudgetItems; window.addBudgetItem = addBudgetItem; window.editBudgetItem = editBudgetItem;
+window.generateDailySummary = generateDailySummary; window.copySummary = copySummary;
 
 // Keyboard navigation for the lightbox.
 document.addEventListener('keydown', (e) => {

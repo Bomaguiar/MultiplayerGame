@@ -249,6 +249,22 @@ main { max-width: 1180px; margin: 36px auto 64px; padding: 0 32px; }
 .budget-table td { padding: 8px 6px; border-bottom: 1px solid var(--line-soft); }
 .budget-table .over-val { color: var(--rust); font-weight: 600; }
 
+/* ── AI client-update summary ────────────────────────────────────────────── */
+.summary-box {
+  background: var(--gold-soft); border: 1px solid #E5D4B0;
+  border-radius: 6px; padding: 16px 18px; margin: 4px 0 14px;
+}
+.summary-date {
+  text-transform: uppercase; letter-spacing: .14em; font-size: 10px;
+  font-weight: 600; color: var(--gold-deep); margin-bottom: 8px;
+}
+.summary-text {
+  font-family: var(--serif); font-size: 18px; line-height: 1.5;
+  color: var(--ink); margin-bottom: 14px;
+}
+.summary-actions { display: flex; gap: 8px; align-items: center; }
+.summary-wa { text-decoration: none; display: inline-flex; align-items: center; }
+
 /* ── Notifications ───────────────────────────────────────────────────────── */
 .notif-wrapper { position: relative; }
 .notif-bell {
