@@ -60,20 +60,31 @@ export async function cancelChangeOrder(id) {
 }
 
 export async function budgetSummary(projectId) {
-  const { rows } = await query(
+  // Computed with separate aggregates (no cross-join, no FILTER) so the numbers
+  // are correct on real Postgres AND on the pg-mem demo. Joining change_orders
+  // and material_requests in one query would multiply rows and inflate the sums.
+  const proj = await query(`SELECT budget FROM projects WHERE id = $1`, [projectId]);
+  if (!proj.rows.length) return null;
+
+  const co = await query(
     `SELECT
-       p.budget AS current_budget,
-       COALESCE(SUM(co.cost_delta) FILTER (WHERE co.status = 'approved'), 0) AS approved_changes,
-       COALESCE(SUM(co.cost_delta) FILTER (WHERE co.status = 'proposed'), 0) AS pending_changes,
-       COUNT(*) FILTER (WHERE co.status = 'proposed') AS pending_count,
-       COUNT(*) FILTER (WHERE co.status = 'approved') AS approved_count,
-       COALESCE(SUM(mr.qty * COALESCE(mr.qty, 1)) FILTER (WHERE mr.status IN ('ordered', 'delivered')), 0) AS material_items
-     FROM projects p
-     LEFT JOIN change_orders co ON co.project_id = p.id
-     LEFT JOIN material_requests mr ON mr.project_id = p.id
-     WHERE p.id = $1
-     GROUP BY p.id, p.budget`,
+       COALESCE(SUM(CASE WHEN status = 'approved' THEN cost_delta ELSE 0 END), 0) AS approved_changes,
+       COALESCE(SUM(CASE WHEN status = 'proposed' THEN cost_delta ELSE 0 END), 0) AS pending_changes,
+       COALESCE(SUM(CASE WHEN status = 'proposed' THEN 1 ELSE 0 END), 0) AS pending_count,
+       COALESCE(SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END), 0) AS approved_count
+     FROM change_orders WHERE project_id = $1`,
     [projectId]
   );
-  return rows[0] ?? null;
+
+  const mat = await query(
+    `SELECT COALESCE(SUM(CASE WHEN status IN ('ordered', 'delivered') THEN 1 ELSE 0 END), 0) AS material_items
+     FROM material_requests WHERE project_id = $1`,
+    [projectId]
+  );
+
+  return {
+    current_budget: proj.rows[0].budget,
+    ...co.rows[0],
+    ...mat.rows[0],
+  };
 }

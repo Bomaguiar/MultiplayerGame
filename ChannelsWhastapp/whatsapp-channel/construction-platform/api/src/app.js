@@ -24,6 +24,7 @@ import { intakeRoutes } from './routes/intake.js';
 import { materialsRollupRoutes } from './routes/materialsRollup.js';
 import { adminRoutes } from './routes/admin.js';
 import { budgetItemRoutes } from './routes/budgetItems.js';
+import { agentRoutes } from './routes/agent.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -56,6 +57,7 @@ export function buildApp(opts = {}) {
   app.register(materialsRollupRoutes);
   app.register(adminRoutes);
   app.register(budgetItemRoutes);
+  app.register(agentRoutes);
 
   // Demo dashboard + demo-only routes (login-as-role, seed). Gated by env so
   // they never ship to production.

@@ -56,6 +56,36 @@ Full vision: [`BLUEPRINT.md`](./BLUEPRINT.md). Demo guide: [`DEMO.md`](./DEMO.md
 | T18 | Pedra & Luz rebrand + editable phone numbers (cascade) | ✅ |
 | T19 | Budget-vs-actual line items + category breakdown | ✅ |
 | T20 | AI WhatsApp daily client summary (`brain/dailySummary`) | ✅ |
+| T21 | **Conversational AI agent** (`brain/agent` + `agentTools`) — NL→tools | ✅ |
+| T22 | WhatsApp simulator artifact (`public/bot.html`) | ✅ |
+
+## June 2026 Session 2 — next-gen AI agent + artifact
+Pedro's goal: "create a next-gen tool and AI bot for construction… think WhatsApp
+usage… what can we get and give… own dev + back-test… functional version + an
+artifact to output results."
+
+- **`brain/agentTools.js`** — declarative, role-gated tool registry (get_status,
+  get_tasks, get_budget, log_work, request_material, list_materials,
+  complete_task, approve_item, list_selections, daily_summary, help). Each maps to
+  existing models; `runTool()` enforces the role.
+- **`brain/agent.js`** — the agent. `runAgent({user,projectId,text,mediaRefs})`.
+  Two understanding paths, same tools: deterministic bilingual (PT/EN) intent
+  resolver `resolveIntent()` (works offline), and `chooseToolViaModel()` (Claude
+  picks tool+params as JSON when key is set). Model choice is ALWAYS re-validated
+  against the role — a worker can never get `approve_item` even if the model says so.
+  Photo-only messages from field users → auto-logged. Uses `brain/memory` for context.
+- **Wiring:** `routes/agent.js` `POST /agent/message` (internal-token auth, for the
+  artifact + in-app). `routes/whatsapp.js` now routes slash-commands to the old
+  command router and everything else (natural language, photos) to the agent.
+- **Artifact:** `public/bot.html` + `bot.js` + `bot.css` — a WhatsApp-style chat
+  simulator. Pick a role, chat naturally, watch the right-hand "what the assistant
+  did" panel show the tool + real DB side-effect. Linked from the portal footer
+  ("💬 Assistente IA"). Served at `/app/bot.html`.
+- **Bug fixed (real):** `changeOrder.budgetSummary` cross-joined change_orders ×
+  material_requests (inflated sums) AND used `FILTER` (pg-mem mishandles). Rewrote
+  as separate CASE-based aggregates. Locked with `test/budgetSummary.test.js`.
+- Back-tested: 176 tests green. Live-smoke-tested over HTTP on the pg-mem demo
+  server (`npm run demo:server`) — budget, materials, tasks, logs, summary all real.
 
 ## June 2026 Session — "best-selling app" push
 Pedro wants this sold to partner architect/builder firms (Lisbon + California).

@@ -55,6 +55,18 @@ npm run demo:server  # http://localhost:4000/app/  (pg-mem, no Docker)
 - **No Docker** in the demo path (Pedro's Mac can't run Docker Desktop) — pg-mem.
 - **n8n / Manufact:** on hold until Pedro says go.
 
+## The AI agent (next-gen bot)
+- `src/brain/agentTools.js` — role-gated tool registry (the bot's capabilities).
+- `src/brain/agent.js` — `runAgent()`: deterministic bilingual NLU + optional
+  Claude tool-choice, same tools. Model choice is re-validated against the role.
+- `src/routes/agent.js` — `POST /agent/message` (internal-token). Webhook
+  (`routes/whatsapp.js`) sends slash-commands to the old router, everything else
+  to the agent.
+- **Artifact:** `public/bot.html` (+ `bot.js`/`bot.css`) — WhatsApp simulator that
+  drives the real agent; shows each tool + DB side-effect live. `/app/bot.html`.
+- Add a new capability = add a tool to `agentTools.js` (+ a deterministic rule in
+  `agent.resolveIntent`) + a test in `test/agent.test.js`.
+
 ## Roadmap (next, priority order)
 1. Punch list / snag management (photo-linked).
 2. Portuguese invoice issuance via **InvoiceXpress/Moloni** (ATCUD+QR+SAF-T) —

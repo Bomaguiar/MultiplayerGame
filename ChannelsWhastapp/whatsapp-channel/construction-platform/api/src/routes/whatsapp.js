@@ -8,6 +8,7 @@
 import { findByPhone } from '../models/user.js';
 import { listProjectsForUser } from '../models/project.js';
 import { parseCommand, executeCommand } from '../whatsapp/router.js';
+import { runAgent } from '../brain/agent.js';
 
 const WATCHER_SECRET = process.env.WATCHER_SECRET || 'dev-watcher-secret';
 
@@ -19,8 +20,9 @@ export async function whatsappRoutes(app) {
       return reply.code(401).send({ error: 'unauthorized' });
     }
 
-    const { from, body, messageId, timestamp } = req.body || {};
-    if (!from || !body) {
+    const { from, body, mediaRefs, messageId, timestamp } = req.body || {};
+    const media = Array.isArray(mediaRefs) ? mediaRefs : [];
+    if (!from || (!body && !media.length)) {
       return reply.code(400).send({ error: 'missing from or body' });
     }
 
@@ -42,13 +44,20 @@ export async function whatsappRoutes(app) {
       };
     }
 
-    // Parse and execute.
-    const parsed = parseCommand(body);
-    const result = await executeCommand(parsed, user, projectId);
+    // Explicit slash-commands stay on the deterministic command router; anything
+    // else (natural language, photos) goes through the AI agent.
+    const parsed = parseCommand(body || '');
+    if (parsed.cmd !== 'unknown') {
+      const result = await executeCommand(parsed, user, projectId);
+      return { reply: result.text, ...(result.data ? { data: result.data } : {}) };
+    }
 
+    const agentResult = await runAgent({ user, projectId, text: body || '', mediaRefs: media });
     return {
-      reply: result.text,
-      ...(result.data ? { data: result.data } : {}),
+      reply: agentResult.reply,
+      ...(agentResult.tool ? { tool: agentResult.tool } : {}),
+      ...(agentResult.action ? { action: agentResult.action } : {}),
+      ...(agentResult.data ? { data: agentResult.data } : {}),
     };
   });
 }

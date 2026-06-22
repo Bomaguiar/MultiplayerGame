@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedra &amp; Luz · Assistente de Obra (WhatsApp)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="bot.css">
+</head>
+<body class="bot-body">
+  <header class="topbar">
+    <div class="brand">Pedra <span class="brand-dot">&amp;</span> Luz <small>Assistente de Obra · IA</small></div>
+    <div class="roles">
+      <span class="roles-label">Falar como</span>
+      <button class="role-btn" data-role="customer">👤 Ilya <small>cliente</small></button>
+      <button class="role-btn" data-role="worker">👷 Franek <small>obra</small></button>
+      <button class="role-btn active" data-role="founder">🧭 Pedro <small>gestor</small></button>
+    </div>
+    <a class="footer-link" href="index.html">← Portal</a>
+  </header>
+
+  <main class="bot-main">
+    <!-- WhatsApp-style phone -->
+    <section class="phone">
+      <div class="phone-bar">
+        <div class="phone-avatar">PL</div>
+        <div class="phone-id">
+          <strong>Pedra &amp; Luz · Obra</strong>
+          <span id="phoneSub">assistente em linha</span>
+        </div>
+        <span class="phone-dots">⋮</span>
+      </div>
+      <div class="chat" id="chat"></div>
+      <div class="quick" id="quick"></div>
+      <form class="composer" id="composer" autocomplete="off">
+        <button type="button" class="attach" id="attachBtn" title="Anexar foto">📎</button>
+        <input type="text" id="input" placeholder="Escreva uma mensagem…" />
+        <button type="submit" class="send" id="sendBtn">➤</button>
+      </form>
+    </section>
+
+    <!-- What the bot did: live action log -->
+    <aside class="actions-panel">
+      <h2>🤖 O que o assistente fez</h2>
+      <p class="actions-hint">Cada mensagem é entendida pela IA, que escolhe uma ação e a executa na
+        plataforma — em tempo real. <span id="aiMode" class="ai-mode"></span></p>
+      <div id="actionLog" class="action-log"></div>
+      <div class="give-get">
+        <div><span class="gg-h">📥 Recebe</span><small>texto, fotos, voz → registos, pedidos, aprovações</small></div>
+        <div><span class="gg-h">📤 Dá</span><small>estado, orçamento, resumos, alertas, aprovações</small></div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="bot.js"></script>
+</body>
+</html>

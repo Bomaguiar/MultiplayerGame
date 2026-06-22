@@ -305,10 +305,12 @@ describe('command execution via webhook', () => {
     expect(reply).toContain('/approve');
   });
 
-  it('unknown command returns help hint', async () => {
-    const res = await send(app, '3510000', 'random gibberish');
+  it('non-command messages fall through to the AI agent, which offers help', async () => {
+    const res = await send(app, '3510000', 'xpto');
     expect(res.statusCode).toBe(200);
-    expect(res.json().reply).toContain('/help');
+    // The agent now handles natural language; an unintelligible message yields
+    // a conversational capability menu rather than a terse "/help" hint.
+    expect(res.json().reply).toMatch(/posso ajudar|ajuda/i);
   });
 });
 
