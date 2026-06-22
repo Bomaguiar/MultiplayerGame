@@ -121,12 +121,62 @@ async function sendMessage(text) {
   typ.remove();
 
   if (status !== 200 || !data) { addBubble('them', 'Ups, algo correu mal. Tente novamente.'); return; }
+  if (data.transcript) addBubble('me', `🎙️ “${data.transcript}”`);
   addBubble('them', data.reply || 'Feito.');
-  logAction(t || '📷 (foto)', data);
+  if (data.interactive) renderInteractive(data.interactive);
+  logAction(t || (mediaRefs.length ? '📷 (foto)' : data.transcript || ''), data);
+}
+
+// Render WhatsApp-style tappable controls under the last bot bubble.
+function renderInteractive(ix) {
+  const chat = $('chat');
+  const wrap = document.createElement('div');
+  wrap.className = 'ix-wrap';
+  const opts = ix.type === 'list' ? ix.rows : ix.buttons;
+  for (const o of opts || []) {
+    const b = document.createElement('button');
+    b.className = `ix-btn ${ix.type}`;
+    b.innerHTML = ix.type === 'list'
+      ? `<strong>${esc(o.title)}</strong>${o.description ? `<span>${esc(o.description)}</span>` : ''}`
+      : esc(o.title);
+    b.onclick = () => { wrap.querySelectorAll('button').forEach((x) => (x.disabled = true)); sendButton(o.id, o.title); };
+    wrap.appendChild(b);
+  }
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// Tapping a control sends its structured id; show the human label in the bubble.
+async function sendButton(id, label) {
+  addBubble('me', `👆 ${label}`);
+  const typ = typing();
+  const { status, data } = await api('POST', '/agent/message', { text: id });
+  typ.remove();
+  if (status !== 200 || !data) { addBubble('them', 'Ups, algo correu mal.'); return; }
+  addBubble('them', data.reply || 'Feito.');
+  if (data.interactive) renderInteractive(data.interactive);
+  logAction(`👆 ${label}`, data);
 }
 
 function armPhoto() { photoArmed = true; $('attachBtn').classList.add('armed'); $('input').placeholder = '📷 foto pronta — descreva o trabalho…'; }
 function disarmPhoto() { photoArmed = false; $('attachBtn').classList.remove('armed'); $('input').placeholder = 'Escreva uma mensagem…'; }
+
+// Voice note: in the demo we can't record audio, so we capture the spoken words
+// and ship them as a `simvoice:` audioRef. A demo-only transcriber on the server
+// decodes it, exercising the real transcribe→agent path end to end.
+async function sendVoice() {
+  const said = prompt('🎙️ Nota de voz — escreva o que diria em voz alta:');
+  if (!said || !said.trim()) return;
+  addBubble('me', '🎙️ nota de voz', { });
+  const typ = typing();
+  const { status, data } = await api('POST', '/agent/message', { audioRef: `simvoice:${encodeURIComponent(said.trim())}` });
+  typ.remove();
+  if (status !== 200 || !data) { addBubble('them', 'Ups, algo correu mal.'); return; }
+  if (data.transcript) addBubble('me', `🎙️ “${data.transcript}”`);
+  addBubble('them', data.reply || 'Feito.');
+  if (data.interactive) renderInteractive(data.interactive);
+  logAction(`🎙️ ${data.transcript || said}`, data);
+}
 
 // Detect whether the live Claude model is wired (affects how messy phrasing is handled).
 async function detectMode() {
@@ -139,6 +189,7 @@ async function detectMode() {
 
 $('composer').addEventListener('submit', (e) => { e.preventDefault(); sendMessage($('input').value); });
 $('attachBtn').addEventListener('click', () => (photoArmed ? disarmPhoto() : armPhoto()));
+$('micBtn').addEventListener('click', sendVoice);
 
 (async function init() {
   await api('POST', '/demo/seed');

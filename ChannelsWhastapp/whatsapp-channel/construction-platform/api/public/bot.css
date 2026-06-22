@@ -47,6 +47,19 @@
 }
 .bubble.typing { color: var(--muted); font-style: italic; }
 
+/* ── Interactive buttons / list (WhatsApp-style) ─────────────────────────── */
+.ix-wrap { display: flex; flex-direction: column; gap: 5px; align-self: flex-start; max-width: 82%; margin-top: 2px; }
+.ix-btn {
+  background: #FBF9F4; border: 1px solid var(--line); color: var(--gold-deep);
+  border-radius: 8px; padding: 9px 12px; font-size: 13px; cursor: pointer;
+  font-family: var(--sans); font-weight: 600; text-align: center; transition: all .15s;
+}
+.ix-btn:hover:not(:disabled) { background: var(--gold-soft); border-color: var(--gold); }
+.ix-btn:disabled { opacity: .5; cursor: default; }
+.ix-btn.list { text-align: left; display: flex; flex-direction: column; gap: 2px; }
+.ix-btn.list strong { font-weight: 600; color: var(--ink); }
+.ix-btn.list span { font-weight: 400; font-size: 11px; color: var(--muted); }
+
 /* ── Quick replies ───────────────────────────────────────────────────────── */
 .quick { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 12px 0; }
 .quick button {

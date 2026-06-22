@@ -20,9 +20,9 @@ export async function whatsappRoutes(app) {
       return reply.code(401).send({ error: 'unauthorized' });
     }
 
-    const { from, body, mediaRefs, messageId, timestamp } = req.body || {};
+    const { from, body, mediaRefs, audioRef, messageId, timestamp } = req.body || {};
     const media = Array.isArray(mediaRefs) ? mediaRefs : [];
-    if (!from || (!body && !media.length)) {
+    if (!from || (!body && !media.length && !audioRef)) {
       return reply.code(400).send({ error: 'missing from or body' });
     }
 
@@ -52,11 +52,13 @@ export async function whatsappRoutes(app) {
       return { reply: result.text, ...(result.data ? { data: result.data } : {}) };
     }
 
-    const agentResult = await runAgent({ user, projectId, text: body || '', mediaRefs: media });
+    const agentResult = await runAgent({ user, projectId, text: body || '', mediaRefs: media, audioRef: audioRef || null });
     return {
       reply: agentResult.reply,
       ...(agentResult.tool ? { tool: agentResult.tool } : {}),
       ...(agentResult.action ? { action: agentResult.action } : {}),
+      ...(agentResult.interactive ? { interactive: agentResult.interactive } : {}),
+      ...(agentResult.transcript ? { transcript: agentResult.transcript } : {}),
       ...(agentResult.data ? { data: agentResult.data } : {}),
     };
   });

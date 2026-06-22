@@ -14,6 +14,22 @@
 import { callModel } from './model.js';
 import { toolsForRole, runTool } from './agentTools.js';
 import { remember, recall, renderContext } from './memory.js';
+import { transcribe } from '../intake/transcriber.js';
+
+/**
+ * Interpret a tapped interactive button/list id (structured, no NLU needed).
+ * `approve:<id>` / `complete:<id>` map straight to a tool; `cmd:<text>` re-runs
+ * the free-text resolver on the canned text. Returns {tool,params} | 'cmd:<t>' | null.
+ */
+export function interpretButton(text, role) {
+  const s = String(text || '').trim();
+  const tools = toolsForRole(role);
+  let m;
+  if ((m = s.match(/^approve:(\d+)$/)) && tools.approve_item) return { tool: 'approve_item', params: { itemId: Number(m[1]) } };
+  if ((m = s.match(/^complete:(\d+)$/)) && tools.complete_task) return { tool: 'complete_task', params: { taskId: Number(m[1]) } };
+  if ((m = s.match(/^cmd:(.+)$/))) return { redirect: m[1].trim() };
+  return null;
+}
 
 // ── Small extractors ─────────────────────────────────────────────────────────
 const numAfter = (text, re) => { const m = text.match(re); return m ? Number(m[1].replace(',', '.')) : null; };
@@ -58,8 +74,10 @@ export function resolveIntent(rawText, role) {
       && (/\b(tarefa|task|#)\b/i.test(lower) || extractTaskId(text)) && has('complete_task')) {
     return { tool: 'complete_task', params: { taskId: extractTaskId(text), title: text } };
   }
-  // 4. Request material.
-  if (/\b(preciso|precisamos|pedir|pedido de|falta\w*|encomend\w+|comprar|need|require|request|order)\b/i.test(lower)
+  // 4. Request material (declarative only — questions like "que materiais
+  //    faltam?" are info queries, handled by list_materials below).
+  if (!isQuestion
+      && /\b(preciso|precisamos|pedir|pedido de|falta\w*|encomend\w+|comprar|need|require|request|order)\b/i.test(lower)
       && has('request_material')) {
     return { tool: 'request_material', params: parseMaterial(text) };
   }
@@ -144,23 +162,41 @@ export async function chooseToolViaModel(text, role, context = '') {
 // ── Main entry ───────────────────────────────────────────────────────────────
 /**
  * Run the agent for one inbound message.
- * @returns {Promise<{reply:string, tool:string|null, action?:string, data?:object}>}
+ * @param {object} a
+ * @param {object} a.user        - {phone, role}
+ * @param {number} a.projectId
+ * @param {string} [a.text]      - the message text (or a tapped button id)
+ * @param {string[]} [a.mediaRefs] - photo refs sent with the message
+ * @param {string} [a.audioRef]  - a voice-note media ref; transcribed to text
+ * @returns {Promise<{reply:string, tool:string|null, action?:string, data?:object, interactive?:object, transcript?:string}>}
  */
-export async function runAgent({ user, projectId, text, mediaRefs = [] }) {
+export async function runAgent({ user, projectId, text, mediaRefs = [], audioRef = null }) {
   const ctx = { user, projectId, mediaRefs };
+  let trimmed = String(text || '').trim();
+  let transcript = null;
 
-  // Photo-only message from a field user → treat as a log with whatever caption.
-  const trimmed = String(text || '').trim();
-  if (!trimmed && mediaRefs.length && toolsForRole(user.role).log_work) {
-    const r = await runTool('log_work', ctx, { note: 'Fotos da obra.' });
-    return pack('log_work', r);
+  // Voice note → transcribe, then treat the transcript as the message text.
+  if (!trimmed && audioRef) {
+    transcript = await transcribe({ mediaRef: audioRef });
+    trimmed = transcript;
   }
 
-  // Prefer the model for understanding; fall back to the deterministic resolver.
+  // Photo-only message from a field user → treat as a log with whatever caption.
+  if (!trimmed && mediaRefs.length && toolsForRole(user.role).log_work) {
+    const r = await runTool('log_work', ctx, { note: 'Fotos da obra.' });
+    return pack('log_work', r, { transcript });
+  }
+
+  // Tapped interactive button/list → resolve structurally (no NLU).
   let choice = null;
+  const btn = interpretButton(trimmed, user.role);
+  if (btn?.redirect) trimmed = btn.redirect;          // "cmd:<text>" → re-run as text
+  else if (btn?.tool) choice = btn;                    // direct tool mapping
+
+  // Prefer the model for understanding; fall back to the deterministic resolver.
   const turns = await recall({ contactPhone: user.phone, role: user.role, projectId, maxTurns: 4 }).catch(() => []);
   const context = renderContext(turns);
-  if (trimmed) {
+  if (!choice && trimmed) {
     choice = await chooseToolViaModel(trimmed, user.role, context).catch(() => null);
     if (!choice) choice = resolveIntent(trimmed, user.role);
   }
@@ -176,19 +212,21 @@ export async function runAgent({ user, projectId, text, mediaRefs = [] }) {
       ? await runTool('help', ctx, {})
       : { text: 'Desculpe, não percebi. Escreva "ajuda" para ver o que posso fazer.' };
     await logTurns(r?.text);
-    return pack(fallbackTool, r);
+    return pack(fallbackTool, r, { transcript });
   }
 
   const result = await runTool(choice.tool, ctx, choice.params);
   await logTurns(result?.text);
-  return pack(choice.tool, result);
+  return pack(choice.tool, result, { transcript });
 }
 
-function pack(tool, result) {
+function pack(tool, result, extra = {}) {
   return {
     reply: result?.text || 'Feito.',
     tool: result?.denied ? null : tool,
     ...(result?.action ? { action: result.action } : {}),
     ...(result?.data ? { data: result.data } : {}),
+    ...(result?.interactive ? { interactive: result.interactive } : {}),
+    ...(extra.transcript ? { transcript: extra.transcript } : {}),
   };
 }

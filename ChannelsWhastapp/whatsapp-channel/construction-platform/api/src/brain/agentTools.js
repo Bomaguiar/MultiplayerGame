@@ -18,6 +18,12 @@ import { dailyClientUpdate } from './dailySummary.js';
 
 const eur = (n) => `€${Number(n || 0).toLocaleString('pt-PT')}`;
 
+// Build WhatsApp-style interactive payloads. The delivery bridge renders these
+// as tappable buttons (≤3) or a selectable list; the simulator does too. Each
+// option carries an `id` the agent interprets on the next turn (see agent.js).
+const buttons = (body, opts) => ({ type: 'buttons', body, buttons: opts.slice(0, 3) });
+const list = (body, header, rows) => ({ type: 'list', body, header, rows });
+
 // Role groups.
 const ALL = ['customer', 'worker', 'founder', 'admin'];
 const FIELD = ['worker', 'founder', 'admin'];
@@ -63,7 +69,16 @@ export const TOOLS = {
         (t) => `${icon[t.status] || '•'} [${t.id}] ${t.title}${t.priority === 'urgent' ? ' 🔴' : ''}`
       );
       if (visible.length > 12) lines.push(`…e mais ${visible.length - 12}.`);
-      return { text: lines.join('\n'), data: visible };
+      // Field roles get one-tap "mark done" buttons for the top open tasks.
+      let interactive;
+      if (FIELD.includes(ctx.user.role)) {
+        const open = visible.filter((t) => t.status !== 'done').slice(0, 3);
+        if (open.length) {
+          interactive = buttons('Marcar como concluída:',
+            open.map((t) => ({ id: `complete:${t.id}`, title: `✓ #${t.id}` })));
+        }
+      }
+      return { text: lines.join('\n'), data: visible, interactive };
     },
   },
 
@@ -142,7 +157,17 @@ export const TOOLS = {
       const lines = reqs.slice(0, 12).map(
         (r) => `• [${r.id}] ${r.item} ×${Number(r.qty)}${r.urgency === 'urgent' ? ' 🔴' : ''}`
       );
-      return { text: `📦 *Pedidos pendentes*\n${lines.join('\n')}`, data: reqs };
+      // Founders get a tappable list to approve each pending request.
+      let interactive;
+      if (BOSS.includes(ctx.user.role)) {
+        interactive = list('Aprovar um pedido:', '📦 Pedidos pendentes',
+          reqs.slice(0, 10).map((r) => ({
+            id: `approve:${r.id}`,
+            title: `Aprovar #${r.id}`,
+            description: `${r.item} ×${Number(r.qty)}${r.urgency === 'urgent' ? ' · urgente' : ''}`,
+          })));
+      }
+      return { text: `📦 *Pedidos pendentes*\n${lines.join('\n')}`, data: reqs, interactive };
     },
   },
 
@@ -229,7 +254,12 @@ export const TOOLS = {
         lines.push('• "aprovar 7" — aprovar pedido/alteração');
         lines.push('• "resumo para o cliente" — gerar atualização');
       }
-      return { text: lines.join('\n') };
+      // Quick-reply buttons for the most common action of each role.
+      const qr = [{ id: 'cmd:estado da obra', title: '📋 Estado' }];
+      if (MONEY.includes(r)) qr.push({ id: 'cmd:como está o orçamento?', title: '💰 Orçamento' });
+      if (FIELD.includes(r)) qr.push({ id: 'cmd:que tarefas tenho?', title: '✅ Tarefas' });
+      else if (BOSS.includes(r)) qr.push({ id: 'cmd:que materiais faltam?', title: '📦 Materiais' });
+      return { text: lines.join('\n'), interactive: buttons('Toque numa opção:', qr) };
     },
   },
 };

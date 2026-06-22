@@ -11,8 +11,9 @@ export async function agentRoutes(app) {
     async (req, reply) => {
       const text = req.body?.text ?? '';
       const mediaRefs = Array.isArray(req.body?.mediaRefs) ? req.body.mediaRefs : [];
-      if (!String(text).trim() && !mediaRefs.length) {
-        return reply.code(400).send({ error: 'text or mediaRefs required' });
+      const audioRef = req.body?.audioRef ?? null;
+      if (!String(text).trim() && !mediaRefs.length && !audioRef) {
+        return reply.code(400).send({ error: 'text, mediaRefs or audioRef required' });
       }
 
       // Project context: explicit projectId (if the caller can see it) or the first visible.
@@ -25,6 +26,6 @@ export async function agentRoutes(app) {
         projectId = req.body.projectId;
       }
 
-      return runAgent({ user: req.user, projectId, text, mediaRefs });
+      return runAgent({ user: req.user, projectId, text, mediaRefs, audioRef });
     });
 }

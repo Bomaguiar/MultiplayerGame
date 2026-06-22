@@ -9,7 +9,15 @@ import { createUser } from './models/user.js';
 import { createChangeOrder } from './models/changeOrder.js';
 import { createSelection } from './models/selection.js';
 import { createBudgetItem } from './models/budgetItem.js';
+import { setTranscriber } from './intake/transcriber.js';
 import { syncClickUpBatch } from './integrations/clickup.js';
+
+// Demo-only STT: the simulator ships spoken words as `simvoice:<encoded text>`,
+// so we can exercise the real transcribe→agent voice path without an STT service.
+setTranscriber(async ({ mediaRef }) => {
+  const m = String(mediaRef || '').match(/^simvoice:(.*)$/);
+  return m ? decodeURIComponent(m[1]) : null;
+});
 
 const ACTORS = {
   founder:  { phone: '351900000001', name: 'Pedro Aguiar' },

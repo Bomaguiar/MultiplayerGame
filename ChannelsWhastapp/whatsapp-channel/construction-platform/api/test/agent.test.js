@@ -6,9 +6,10 @@ import { createProject } from '../src/models/project.js';
 import { createTask, listTasks } from '../src/models/task.js';
 import { createUser } from '../src/models/user.js';
 import { listLogs } from '../src/models/dailyLog.js';
-import { listRequests } from '../src/models/material.js';
+import { createRequest, listRequests } from '../src/models/material.js';
 import { setModelClient, resetModelClient } from '../src/brain/model.js';
-import { resolveIntent, parseMaterial, runAgent } from '../src/brain/agent.js';
+import { setTranscriber, resetTranscriber } from '../src/intake/transcriber.js';
+import { resolveIntent, parseMaterial, runAgent, interpretButton } from '../src/brain/agent.js';
 
 beforeAll(async () => {
   const mem = newDb();
@@ -33,7 +34,7 @@ beforeEach(async () => {
     name: 'Santa Rita', clientPhone: CUSTOMER.phone, workerPhones: [WORKER.phone], budget: 85000,
   });
 });
-afterEach(() => resetModelClient());
+afterEach(() => { resetModelClient(); resetTranscriber(); });
 
 // ── Deterministic intent resolution ──────────────────────────────────────────
 describe('resolveIntent (offline NLU)', () => {
@@ -174,5 +175,75 @@ describe('runAgent — graceful fallback', () => {
   it('returns help for an unintelligible short message', async () => {
     const res = await runAgent({ user: CUSTOMER, projectId: project.id, text: 'xpto' });
     expect(res.reply).toMatch(/ajuda|posso ajudar/i);
+  });
+});
+
+// ── Interactive buttons / lists ──────────────────────────────────────────────
+describe('interactive payloads', () => {
+  it('offers tappable "mark done" buttons to a worker viewing tasks', async () => {
+    await createTask({ projectId: project.id, title: 'Pintar', assigneePhone: WORKER.phone });
+    const res = await runAgent({ user: WORKER, projectId: project.id, text: 'que tarefas tenho?' });
+    expect(res.interactive?.type).toBe('buttons');
+    expect(res.interactive.buttons[0].id).toMatch(/^complete:\d+$/);
+  });
+
+  it('offers a founder a tappable list to approve pending materials', async () => {
+    await createRequest({ projectId: project.id, requestedBy: WORKER.phone, item: 'Cimento', qty: 5 });
+    const res = await runAgent({ user: FOUNDER, projectId: project.id, text: 'que materiais faltam?' });
+    expect(res.interactive?.type).toBe('list');
+    expect(res.interactive.rows[0].id).toMatch(/^approve:\d+$/);
+  });
+
+  it('a customer viewing materials gets no approve controls', async () => {
+    await createRequest({ projectId: project.id, requestedBy: WORKER.phone, item: 'Cimento', qty: 5 });
+    const res = await runAgent({ user: CUSTOMER, projectId: project.id, text: 'que materiais faltam?' });
+    expect(res.interactive).toBeUndefined();
+  });
+});
+
+// ── Button round-trip (tapping an interactive control) ───────────────────────
+describe('interpretButton + tap handling', () => {
+  it('maps approve:<id> to the approve tool for a founder', () => {
+    expect(interpretButton('approve:7', 'founder')).toEqual({ tool: 'approve_item', params: { itemId: 7 } });
+  });
+  it('rejects approve:<id> for a worker (no permission)', () => {
+    expect(interpretButton('approve:7', 'worker')).toBeNull();
+  });
+  it('treats cmd:<text> as a redirect to free-text resolution', () => {
+    expect(interpretButton('cmd:estado da obra', 'customer')).toEqual({ redirect: 'estado da obra' });
+  });
+
+  it('tapping an approve button actually approves the request', async () => {
+    const r = await createRequest({ projectId: project.id, requestedBy: WORKER.phone, item: 'Cimento', qty: 5 });
+    const res = await runAgent({ user: FOUNDER, projectId: project.id, text: `approve:${r.id}` });
+    expect(res.action).toBe('material_approved');
+    const [updated] = (await listRequests({ projectId: project.id })).filter((x) => x.id === r.id);
+    expect(updated.status).toBe('ordered');
+  });
+
+  it('tapping a cmd quick-reply runs the underlying intent', async () => {
+    const res = await runAgent({ user: FOUNDER, projectId: project.id, text: 'cmd:como está o orçamento?' });
+    expect(res.tool).toBe('get_budget');
+  });
+});
+
+// ── Voice notes ──────────────────────────────────────────────────────────────
+describe('voice note transcription', () => {
+  it('transcribes a voice note and routes the transcript to a tool', async () => {
+    setTranscriber(async () => 'preciso de 8 sacos de cimento urgente');
+    const res = await runAgent({ user: WORKER, projectId: project.id, text: '', audioRef: 'wa-media/voice-1.ogg' });
+    expect(res.tool).toBe('request_material');
+    expect(res.transcript).toContain('cimento');
+    const reqs = await listRequests({ projectId: project.id });
+    expect(reqs).toHaveLength(1);
+    expect(Number(reqs[0].qty)).toBe(8);
+  });
+
+  it('a voice report from a worker becomes a daily log', async () => {
+    setTranscriber(async () => 'hoje instalámos os estores na sala, 2 pessoas, 8 horas');
+    const res = await runAgent({ user: WORKER, projectId: project.id, text: '', audioRef: 'wa-media/voice-2.ogg' });
+    expect(res.tool).toBe('log_work');
+    const logs = await listLogs(project.id);
+    expect(logs).toHaveLength(1);
   });
 });
