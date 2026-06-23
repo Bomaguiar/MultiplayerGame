@@ -6,6 +6,6 @@
   "description": "Standalone WhatsApp <-> Pedra & Luz platform bridge poller (pluggable adapters, no runtime deps).",
   "scripts": {
     "start": "node poller.mjs",
-    "start:mock": "BRIDGE=mock node poller.mjs"
+    "start:mock": "node poller.mjs"
   }
 }

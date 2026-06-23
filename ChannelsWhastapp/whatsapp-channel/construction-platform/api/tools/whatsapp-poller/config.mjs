@@ -49,7 +49,7 @@ export function loadConfig(argv = process.argv.slice(2)) {
     dryRun,
 
     // Adapter-specific (read inside adapters, surfaced here for the banner)
-    bridgeDbPath: process.env.BRIDGE_DB_PATH || null,
+    bridgeDbPath: process.env.BRIDGE_DB_PATH || 'E:\\whatsapp-mcp\\whatsapp-bridge\\store\\messages.db',
     bridgeApiUrl: (process.env.BRIDGE_API_URL || 'http://localhost:8080/api').replace(/\/+$/, ''),
     mockInbox: process.env.MOCK_INBOX || null,
   };

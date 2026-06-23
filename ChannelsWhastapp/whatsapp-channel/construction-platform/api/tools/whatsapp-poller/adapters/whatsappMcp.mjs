@@ -1,19 +1,24 @@
 // Real lharries-style whatsapp-mcp bridge adapter.
 //
+// Modeled after the PROVEN watcher.py at:
+//   ChannelsWhastapp/whatsapp-channel/watcher/watcher.py
+// which has been running in production on Pedro's machine. We match its exact
+// DB query pattern and send contract — no guesswork.
+//
 // Inbound: read the Go bridge's SQLite store directly using Node's built-in
-//   `node:sqlite` (DatabaseSync). Available in Node 22.5+/24. Pedro runs Node 24.
-//   We query the `messages` table for individual incoming messages newer than
-//   the cursor.
+//   `node:sqlite` (DatabaseSync, Node 22.5+ / 24). We query the `messages`
+//   table for recent individual incoming messages and dedupe by message `id`
+//   (same strategy as watcher.py — no dependency on a timestamp column).
+//
 // Outbound: POST to the Go bridge's REST API `/api/send` with
-//   { recipient: <bareNumber>, message: <text> }.
+//   { recipient: <chat_jid>, message: <text> }.
+//   The recipient is the FULL chat JID (e.g. "351900000009@s.whatsapp.net"),
+//   matching how watcher.py calls send_wa(chat, ...).
 //
 // Config (env):
 //   BRIDGE_DB_PATH  path to whatsapp-bridge/store/messages.db (REQUIRED)
+//                   Pedro's default: E:\whatsapp-mcp\whatsapp-bridge\store\messages.db
 //   BRIDGE_API_URL  base URL of the Go bridge (default http://localhost:8080/api)
-//
-// The store's `timestamp` column is stored by whatsmeow as an RFC3339 / SQLite
-// datetime string. We carry the cursor as that same string and compare with
-// SQLite's own string ordering (lexicographic == chronological for ISO-8601).
 
 let DatabaseSync = null;
 let sqliteImportError = null;
@@ -42,43 +47,68 @@ export class WhatsappMcpAdapter {
       );
     }
     if (!dbPath) {
-      throw new Error('BRIDGE_DB_PATH is required for the whatsappMcp adapter (path to whatsapp-bridge/store/messages.db).');
+      throw new Error(
+        'BRIDGE_DB_PATH is required for the whatsappMcp adapter.\n' +
+        'Pedro\'s default: E:\\whatsapp-mcp\\whatsapp-bridge\\store\\messages.db',
+      );
     }
 
     // Open read-only — we never write to the bridge's store.
     this.db = new DatabaseSync(dbPath, { readOnly: true });
   }
 
+  // Fetch recent incoming individual messages. `sinceCursor` is a Set of
+  // already-processed message IDs (serialized as JSON array in the state file).
+  // This mirrors watcher.py's id-based deduplication — no dependency on a
+  // timestamp column existing or being in any particular format.
   async fetchIncoming(sinceCursor) {
-    // Cursor is the last-seen timestamp string. Empty string scans from the start.
-    const cursor = sinceCursor || '';
+    const seenIds = new Set(Array.isArray(sinceCursor) ? sinceCursor : []);
+
+    // Match watcher.py's exact query: recent messages, is_from_me=0, newest first.
+    // We then reverse to process oldest-first, and skip IDs we've already seen.
     const stmt = this.db.prepare(
-      `SELECT id, chat_jid, sender, content, timestamp, media_type, filename
+      `SELECT id, chat_jid, sender, content
          FROM messages
         WHERE is_from_me = 0
-          AND chat_jid LIKE '%@s.whatsapp.net'
-          AND timestamp > ?
-        ORDER BY timestamp ASC
-        LIMIT 200`,
+        ORDER BY rowid DESC
+        LIMIT 80`,
     );
-    const rows = stmt.all(cursor);
+    const rows = stmt.all();
+    rows.reverse(); // oldest first
 
-    const messages = rows.map((r) => ({
-      jid: r.chat_jid,
-      // Prefer the explicit sender if present, else derive from the chat jid.
-      from: jidToBare(r.sender || r.chat_jid),
-      body: r.content ?? '',
-      mediaType: r.media_type || null,
-      timestamp: r.timestamp,
-      messageId: r.id,
-    }));
+    const messages = [];
+    const newSeen = [...seenIds]; // carry forward
 
-    const newCursor = messages.length ? messages[messages.length - 1].timestamp : cursor;
-    return { messages, cursor: newCursor };
+    for (const r of rows) {
+      // Skip groups — only individual chats (@s.whatsapp.net).
+      if (!r.chat_jid || !r.chat_jid.includes('@s.whatsapp.net')) continue;
+      // Skip already-processed.
+      const mid = String(r.id);
+      if (seenIds.has(mid)) continue;
+
+      messages.push({
+        jid: r.chat_jid,
+        from: jidToBare(r.sender || r.chat_jid),
+        body: r.content ?? '',
+        mediaType: null,
+        timestamp: null,
+        messageId: mid,
+      });
+      newSeen.push(mid);
+    }
+
+    // Cap the seen list so it doesn't grow forever (match watcher.py's 500 cap).
+    const CAP = 500;
+    const cursor = newSeen.length > CAP ? newSeen.slice(-CAP) : newSeen;
+    return { messages, cursor };
   }
 
+  // Send a message via the Go bridge. Recipient is the FULL chat JID
+  // (e.g. "351900000009@s.whatsapp.net"), matching watcher.py's send_wa().
+  // The poller passes a bare number, so we re-attach the suffix.
   async sendMessage(toBareNumber, text) {
-    const recipient = String(toBareNumber).replace(/\D/g, '');
+    const digits = String(toBareNumber).replace(/\D/g, '');
+    const recipient = `${digits}@s.whatsapp.net`;
     const res = await fetch(`${this.apiUrl}/send`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

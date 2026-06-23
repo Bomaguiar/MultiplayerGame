@@ -84,7 +84,7 @@ async function runInbound(ctx) {
   const { adapter, api, cfg, state } = ctx;
   let result;
   try {
-    result = await adapter.fetchIncoming(state.cursor ?? (cfg.bridge === 'whatsappMcp' ? '' : 0));
+    result = await adapter.fetchIncoming(state.cursor ?? null);
   } catch (err) {
     log.error(`inbound fetch failed: ${err.message}`);
     return;
