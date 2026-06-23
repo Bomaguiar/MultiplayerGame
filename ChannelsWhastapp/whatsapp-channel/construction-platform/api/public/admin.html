@@ -8,101 +8,100 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css" />
-<style>
-  .admin-wrap { max-width: 980px; margin: 36px auto 64px; padding: 0 32px; }
-  .admin-card {
-    background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
-    padding: 24px 26px; margin: 20px 0; box-shadow: var(--shadow-sm);
-  }
-  .admin-card > h2 {
-    font-family: var(--serif); font-weight: 600; font-size: 24px; margin: 0 0 6px;
-    color: var(--ink);
-  }
-  .admin-card .sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
-  table.admin { width: 100%; border-collapse: collapse; }
-  table.admin th, table.admin td {
-    text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--line-soft);
-    font-size: 14px; vertical-align: middle;
-  }
-  table.admin th {
-    color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .14em;
-    font-weight: 600;
-  }
-  table.admin input, table.admin select, .row-form input, .row-form select, label input {
-    padding: 9px 11px; border: 1px solid var(--line); border-radius: 3px;
-    font-family: var(--sans); font-size: 14px; color: var(--ink); background: #fff;
-    width: 100%;
-  }
-  table.admin input:focus, table.admin select:focus, .row-form input:focus,
-  label input:focus, .row-form select:focus {
-    outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft);
-  }
-  .btn {
-    cursor: pointer; border: none; border-radius: 2px; padding: 9px 16px;
-    font-family: var(--sans); font-weight: 600; font-size: 11px;
-    text-transform: uppercase; letter-spacing: .1em;
-    background: var(--ink); color: #F3EEE2; transition: all .18s ease;
-  }
-  .btn:hover { background: var(--gold-deep); transform: translateY(-1px); }
-  .btn.alt { background: var(--gold); color: #211a10; }
-  .btn.alt:hover { background: var(--gold-deep); color: #F3EEE2; }
-  .btn.ghost { background: var(--sand); color: var(--ink-2); border: 1px solid var(--line); }
-  .btn.ghost:hover { background: var(--gold-soft); color: var(--gold-deep); transform: none; }
-  .row-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 18px; }
-  .row-form input, .row-form select { width: auto; }
-  label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .12em;
-          color: var(--muted); font-weight: 600; }
-  label input { margin-top: 6px; text-transform: none; letter-spacing: normal; color: var(--ink); font-weight: 400; }
-  .msg { font-size: 12px; margin-left: 8px; font-weight: 600; }
-  .msg.ok { color: var(--green); } .msg.err { color: var(--rust); }
-  .mono { font-family: ui-monospace, Menlo, monospace; color: var(--muted); font-size: 13px; }
-  .hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
-</style>
+<link rel="stylesheet" href="admin.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">Pedra <span class="brand-dot">&amp;</span> Luz <small>Admin</small></div>
-    <a href="./" class="role-btn">← Voltar ao painel</a>
-  </header>
-
-  <div class="admin-wrap">
-    <div class="admin-card">
-      <h2>Utilizadores</h2>
-      <div class="sub">Pessoas com acesso à plataforma. O telefone é a identidade (WhatsApp) — ao alterá-lo, todo o histórico, tarefas e notificações dessa pessoa acompanham o novo número.</div>
-      <table class="admin" id="usersTable">
-        <thead><tr><th>Nome</th><th>Função</th><th>Telefone</th><th></th></tr></thead>
-        <tbody id="usersBody"></tbody>
-      </table>
-
-      <div class="row-form">
-        <input id="newName" placeholder="Nome" />
-        <select id="newRole">
-          <option value="worker">worker</option>
-          <option value="customer">customer</option>
-          <option value="founder">founder</option>
-          <option value="admin">admin</option>
-        </select>
-        <input id="newPhone" placeholder="Telefone (ex: 351900000010)" />
-        <button class="btn alt" onclick="addUser()">+ Adicionar</button>
-        <span class="msg" id="addMsg"></span>
+  <div class="admin-shell">
+    <!-- Sidebar -->
+    <aside class="side">
+      <div class="side-brand">Pedra <span class="brand-dot">&amp;</span> Luz</div>
+      <div class="side-tag">Consola de administração</div>
+      <nav class="side-nav">
+        <button data-view="members" class="active"><span class="ico">👥</span> Membros</button>
+        <button data-view="project"><span class="ico">🏗️</span> Projeto</button>
+      </nav>
+      <div class="side-foot">
+        <a href="./">← Voltar ao painel</a>
+        <a href="bot.html">💬 Assistente IA</a>
       </div>
-    </div>
+    </aside>
 
-    <div class="admin-card">
-      <h2>Projeto</h2>
-      <div class="sub">Detalhes do projeto visíveis para o cliente e a equipa.</div>
-      <div id="projectForm" style="display:flex; flex-direction:column; gap:14px;">
-        <label>Nome <input id="pName" /></label>
-        <label>Morada <input id="pAddress" /></label>
-        <label>Orçamento (€) <input id="pBudget" type="number" /></label>
-        <div>
-          <button class="btn" onclick="saveProject()">Guardar projeto</button>
-          <span class="msg" id="projMsg"></span>
+    <!-- Main -->
+    <main class="admin-main">
+      <!-- Members view -->
+      <section id="view-members" class="view active">
+        <div class="page-head">
+          <div>
+            <h1>Membros</h1>
+            <div class="sub">Pessoas com acesso à plataforma. O telefone é a identidade (WhatsApp) — ao alterá-lo, todo o histórico, tarefas e notificações dessa pessoa acompanham o novo número.</div>
+          </div>
+          <button class="btn primary" id="addBtn">+ Adicionar membro</button>
         </div>
+
+        <div class="stats" id="stats"></div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Equipa</h2>
+            <div class="search"><input id="search" placeholder="Procurar por nome ou número…" /></div>
+          </div>
+          <table class="tbl">
+            <thead><tr><th>Membro</th><th>Função</th><th style="text-align:right">Ações</th></tr></thead>
+            <tbody id="usersBody"></tbody>
+          </table>
+          <div id="usersEmpty" class="empty-state" style="display:none">Sem membros. Adicione o primeiro acima.</div>
+        </div>
+      </section>
+
+      <!-- Project view -->
+      <section id="view-project" class="view">
+        <div class="page-head">
+          <div>
+            <h1>Projeto</h1>
+            <div class="sub">Detalhes do projeto visíveis para o cliente e a equipa.</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2 id="projTitle">Detalhes</h2></div>
+          <div class="form-grid" id="projectForm">
+            <div class="field"><label>Nome do projeto</label><input id="pName" /></div>
+            <div class="field"><label>Morada</label><input id="pAddress" /></div>
+            <div class="field"><label>Orçamento (€)</label><input id="pBudget" type="number" /></div>
+            <div><button class="btn dark" id="saveProjectBtn">Guardar projeto</button></div>
+          </div>
+          <div id="noProject" class="empty-state" style="display:none">Sem projeto para editar (faça seed no painel primeiro).</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Add member modal -->
+  <div class="modal-backdrop" id="addModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Adicionar membro</h3>
+        <p>O número é a identidade WhatsApp da pessoa.</p>
       </div>
-      <p class="mono" id="noProject" style="display:none">Sem projeto para editar (faça seed no painel primeiro).</p>
+      <div class="modal-body">
+        <div class="field"><label>Nome</label><input id="newName" placeholder="Ex: Maria Silva" /></div>
+        <div class="field"><label>Função</label>
+          <select id="newRole" class="edit-input" style="box-shadow:none;border-color:var(--line)">
+            <option value="worker">worker — equipa de obra</option>
+            <option value="customer">customer — cliente</option>
+            <option value="founder">founder — gestor</option>
+            <option value="admin">admin</option>
+          </select>
+        </div>
+        <div class="field"><label>Telefone</label><input id="newPhone" placeholder="Ex: 351900000010" /></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn ghost" id="cancelAdd">Cancelar</button>
+        <button class="btn primary" id="confirmAdd">Adicionar</button>
+      </div>
     </div>
   </div>
+
+  <div class="toasts" id="toasts"></div>
 
 <script src="admin.js"></script>
 </body>
