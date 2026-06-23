@@ -49,7 +49,7 @@ async function render() {
     <div class="meta">
       <span>📍 ${esc(p.address || '—')}</span>
       <span class="sep">·</span>
-      <span>Estado <b>${esc(p.status)}</b></span>
+      <span class="status-badge">${esc(p.status)}</span>
       <span class="sep">·</span>
       <span>Orçamento <b>€${Number(p.budget).toLocaleString('pt-PT')}</b></span>
     </div>`;
@@ -297,31 +297,36 @@ async function loadBudget() {
   const pctUsed = budgetNum > 0 ? Math.min(100, Math.round((spent / budgetNum) * 100)) : 0;
   const barColor = pctUsed > 90 ? 'var(--rust)' : pctUsed > 70 ? 'var(--gold)' : 'var(--green)';
 
+  const available = Math.max(0, remaining);
   let html = `<h2>💰 Orçamento</h2>
     <div class="budget-grid">
-      <div class="budget-item"><span class="budget-val">${fmt(data.current_budget)}</span><span class="dim">Orçamento total</span></div>
-      <div class="budget-item"><span class="budget-val">${fmt(spent)}</span><span class="dim">Gasto até agora</span></div>
-      <div class="budget-item"><span class="budget-val ${remaining < 0 ? 'over' : ''}">${fmt(remaining)}</span><span class="dim">Restante</span></div>
-      <div class="budget-item"><span class="budget-val pending">${fmt(data.pending_changes)}</span><span class="dim">${data.pending_count} alteração(ões)</span></div>
+      <div class="budget-item budget-stat"><span class="b-label">Total</span><span class="budget-val b-val">${fmt(data.current_budget)}</span><span class="b-sub">orçamento</span></div>
+      <div class="budget-item budget-stat"><span class="b-label">Gasto</span><span class="budget-val b-val mid">${fmt(spent)}</span><span class="b-sub">até agora</span></div>
+      <div class="budget-item budget-stat"><span class="b-label">Restante</span><span class="budget-val b-val ${remaining < 0 ? 'over' : ''}">${fmt(remaining)}</span><span class="b-sub">disponível</span></div>
+      <div class="budget-item budget-stat"><span class="b-label">Alterações</span><span class="budget-val b-val gold pending">${fmt(data.pending_changes)}</span><span class="b-sub">${data.pending_count} pendente(s)</span></div>
     </div>
     <div class="budget-bar-wrap">
-      <div class="budget-bar-outer"><div class="budget-bar-inner" style="width:${pctUsed}%;background:${barColor}"></div></div>
-      <span class="budget-bar-label">${pctUsed}% utilizado</span>
+      <div class="budget-bar-outer prog-wrap"><div class="budget-bar-inner prog-fill" style="width:${pctUsed}%;background:${barColor}"></div></div>
+      <span class="budget-bar-label prog-label">${pctUsed}% utilizado · ${fmt(available)} disponível</span>
     </div>`;
 
   if (bd?.categories?.length) {
-    html += '<div class="budget-cats">';
+    html += '<div class="budget-cats cat-table">';
+    html += `<div class="budget-cat-row cat-row hdr">
+        <span>Categoria</span><span>Gasto</span><span>Total</span><span>%</span><span></span>
+      </div>`;
     for (const c of bd.categories) {
       const catEst = Number(c.estimated || 0);
       const catAct = Number(c.actual || 0);
       const catPct = catEst > 0 ? Math.min(100, Math.round((catAct / catEst) * 100)) : 0;
       const catBarColor = catAct > catEst ? 'var(--rust)' : catPct > 70 ? 'var(--gold)' : 'var(--green)';
       const overClass = catAct > catEst ? ' over' : '';
-      html += `<div class="budget-cat-row">
-        <span class="budget-cat-name">${esc(c.category)}</span>
-        <span class="budget-cat-nums">${fmt(catAct)} <span class="dim">/ ${fmt(catEst)}</span></span>
-        <div class="budget-cat-bar"><div style="width:${catPct}%;background:${catBarColor}"></div></div>
-        <span class="budget-cat-pct${overClass}">${catPct}%</span>
+      html += `<div class="budget-cat-row cat-row">
+        <span class="budget-cat-name cat-name">${esc(c.category)}</span>
+        <span class="budget-cat-nums cat-amt">${fmt(catAct)}</span>
+        <span class="budget-cat-nums cat-amt mid">${fmt(catEst)}</span>
+        <span class="budget-cat-pct cat-pct${overClass}">${catPct}%</span>
+        <div class="budget-cat-bar mini"><div class="mini-fill" style="width:${catPct}%;background:${catBarColor}"></div></div>
       </div>`;
     }
     html += '</div>';
@@ -609,9 +614,39 @@ function setupReveal() {
   });
 }
 
+// ── Sidebar nav: smooth-scroll links + scroll-spy active state ───────────────
+function setupNav() {
+  const items = Array.from(document.querySelectorAll('.nav-item[data-target]'));
+  if (!items.length) return;
+  items.forEach((a) => {
+    a.addEventListener('click', (e) => {
+      const sec = $(a.dataset.target);
+      if (!sec) return;
+      e.preventDefault();
+      sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+  const sections = items.map((a) => $(a.dataset.target)).filter(Boolean);
+  if (!('IntersectionObserver' in window) || !sections.length) return;
+  const setActive = (id) => items.forEach((a) =>
+    a.classList.toggle('active', a.dataset.target === id));
+  const visible = new Map();
+  const spy = new IntersectionObserver((entries) => {
+    for (const e of entries) visible.set(e.target.id, e.intersectionRatio);
+    let best = null, bestRatio = 0;
+    for (const [id, ratio] of visible) {
+      if (ratio > bestRatio) { bestRatio = ratio; best = id; }
+    }
+    if (best && bestRatio > 0) setActive(best);
+  }, { threshold: [0, 0.15, 0.4, 0.7], rootMargin: '-90px 0px -55% 0px' });
+  sections.forEach((s) => spy.observe(s));
+  setActive(sections[0].id);
+}
+
 // ── Boot ─────────────────────────────────────────────────────────────────────
 (async function init() {
   setupChrome();
+  setupNav();
   setupReveal();
   requestAnimationFrame(() => document.body.classList.add('loaded'));
   await api('POST', '/demo/seed');
