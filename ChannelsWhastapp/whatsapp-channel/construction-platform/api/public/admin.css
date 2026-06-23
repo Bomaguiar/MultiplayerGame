@@ -179,6 +179,48 @@
 }
 .field input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); background: #fff; }
 
+/* ── Project cards ────────────────────────────────────────────────────────── */
+.proj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+.proj-card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 22px; box-shadow: var(--shadow-sm); cursor: pointer;
+  transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s, border-color .25s;
+  position: relative; overflow: hidden;
+}
+.proj-card::after {
+  content: ''; position: absolute; right: -40px; top: -40px; width: 130px; height: 130px;
+  border-radius: 50%; background: radial-gradient(circle, var(--gold-soft), transparent 70%);
+  opacity: .6; pointer-events: none; transition: opacity .25s;
+}
+.proj-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--gold); }
+.proj-card:hover::after { opacity: 1; }
+.proj-card .pc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.proj-card h3 { font-family: var(--serif); font-size: 22px; font-weight: 600; color: var(--ink); line-height: 1.15; position: relative; z-index: 1; }
+.proj-card .pc-addr { color: var(--muted); font-size: 13px; margin-bottom: 18px; display: flex; align-items: center; gap: 6px; }
+.proj-card .pc-stats { display: flex; gap: 22px; border-top: 1px solid var(--line-soft); padding-top: 16px; position: relative; z-index: 1; }
+.proj-card .pc-stat .v { font-family: var(--serif); font-size: 20px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.proj-card .pc-stat .k { font-size: 9.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin-top: 3px; font-weight: 600; }
+.status-pill {
+  font-size: 10px; padding: 4px 11px; border-radius: 20px; text-transform: uppercase;
+  letter-spacing: .1em; font-weight: 600; white-space: nowrap;
+  background: var(--green-soft); color: var(--green);
+}
+.status-pill.paused { background: var(--amber-soft); color: var(--amber-ink); }
+.status-pill.done   { background: var(--sand); color: var(--ink-2); }
+
+textarea.edit-input, .field textarea {
+  width: 100%; padding: 11px 13px; border: 1px solid var(--line); border-radius: 8px;
+  font-family: var(--sans); font-size: 14px; color: var(--ink); background: var(--ivory);
+  outline: none; resize: vertical; min-height: 56px; transition: border-color .16s, box-shadow .16s;
+}
+.field textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); background: #fff; }
+.field .hint { font-size: 11.5px; color: var(--muted); margin-top: 5px; }
+select.field-select {
+  width: 100%; padding: 11px 13px; border: 1px solid var(--line); border-radius: 8px;
+  font-family: var(--sans); font-size: 14px; color: var(--ink); background: var(--ivory); cursor: pointer; outline: none;
+}
+select.field-select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
+
 /* ── Modal ────────────────────────────────────────────────────────────────── */
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(28,22,15,.55);

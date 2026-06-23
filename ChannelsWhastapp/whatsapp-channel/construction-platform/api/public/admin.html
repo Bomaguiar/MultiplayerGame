@@ -18,7 +18,7 @@
       <div class="side-tag">Consola de administração</div>
       <nav class="side-nav">
         <button data-view="members" class="active"><span class="ico">👥</span> Membros</button>
-        <button data-view="project"><span class="ico">🏗️</span> Projeto</button>
+        <button data-view="project"><span class="ico">🏗️</span> Projetos</button>
       </nav>
       <div class="side-foot">
         <a href="./">← Voltar ao painel</a>
@@ -53,24 +53,17 @@
         </div>
       </section>
 
-      <!-- Project view -->
+      <!-- Projects view -->
       <section id="view-project" class="view">
         <div class="page-head">
           <div>
-            <h1>Projeto</h1>
-            <div class="sub">Detalhes do projeto visíveis para o cliente e a equipa.</div>
+            <h1>Projetos</h1>
+            <div class="sub">Todas as obras na plataforma. Cada projeto tem o seu cliente, equipa e orçamento. Clique para editar.</div>
           </div>
+          <button class="btn primary" id="newProjectBtn">+ Novo projeto</button>
         </div>
-        <div class="panel">
-          <div class="panel-head"><h2 id="projTitle">Detalhes</h2></div>
-          <div class="form-grid" id="projectForm">
-            <div class="field"><label>Nome do projeto</label><input id="pName" /></div>
-            <div class="field"><label>Morada</label><input id="pAddress" /></div>
-            <div class="field"><label>Orçamento (€)</label><input id="pBudget" type="number" /></div>
-            <div><button class="btn dark" id="saveProjectBtn">Guardar projeto</button></div>
-          </div>
-          <div id="noProject" class="empty-state" style="display:none">Sem projeto para editar (faça seed no painel primeiro).</div>
-        </div>
+        <div class="proj-grid" id="projectsGrid"></div>
+        <div id="projectsEmpty" class="empty-state" style="display:none">Sem projetos. Crie o primeiro com “+ Novo projeto”.</div>
       </section>
     </main>
   </div>
@@ -97,6 +90,41 @@
       <div class="modal-foot">
         <button class="btn ghost" id="cancelAdd">Cancelar</button>
         <button class="btn primary" id="confirmAdd">Adicionar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Project create/edit modal -->
+  <div class="modal-backdrop" id="projModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="projModalTitle">Novo projeto</h3>
+        <p id="projModalSub">Crie uma nova obra na plataforma.</p>
+      </div>
+      <div class="modal-body">
+        <div class="field"><label>Nome do projeto</label><input id="prjName" placeholder="Ex: Quinta do Sol — 2026" /></div>
+        <div class="field"><label>Morada</label><input id="prjAddress" placeholder="Ex: Lisboa, Portugal" /></div>
+        <div class="field" id="prjClientField">
+          <label>Telefone do cliente</label>
+          <input id="prjClient" placeholder="Ex: 351900000020" />
+          <div class="hint">É a identidade WhatsApp do cliente. Não pode ser alterado depois.</div>
+        </div>
+        <div class="field"><label>Orçamento (€)</label><input id="prjBudget" type="number" placeholder="85000" /></div>
+        <div class="field"><label>Equipa — telefones (separados por vírgula)</label>
+          <textarea id="prjWorkers" placeholder="351900000009, 351900000011"></textarea>
+        </div>
+        <div class="field" id="prjStatusField" style="display:none">
+          <label>Estado</label>
+          <select id="prjStatus" class="field-select">
+            <option value="active">active — em curso</option>
+            <option value="paused">paused — em pausa</option>
+            <option value="done">done — concluído</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn ghost" id="cancelProj">Cancelar</button>
+        <button class="btn primary" id="confirmProj">Guardar</button>
       </div>
     </div>
   </div>

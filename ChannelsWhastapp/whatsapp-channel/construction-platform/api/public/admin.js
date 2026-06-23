@@ -150,25 +150,87 @@ async function addUser() {
   }
 }
 
-// ── Project ──────────────────────────────────────────────────────────────────
-let projectId = null;
-async function loadProject() {
+// ── Projects ─────────────────────────────────────────────────────────────────
+let projectsCache = [];
+let editingProjectId = null; // null = create mode
+
+async function loadProjects() {
   const { data } = await api('GET', '/projects');
-  const project = (data || [])[0];
-  if (!project) { $('projectForm').style.display = 'none'; $('noProject').style.display = 'block'; return; }
-  projectId = project.id;
-  $('projTitle').textContent = project.name || 'Detalhes';
-  $('pName').value = project.name ?? '';
-  $('pAddress').value = project.address ?? '';
-  $('pBudget').value = project.budget ?? 0;
+  projectsCache = data || [];
+  renderProjects();
 }
 
-async function saveProject() {
-  if (!projectId) return;
-  const body = { name: $('pName').value, address: $('pAddress').value, budget: Number($('pBudget').value) };
-  const { status, data } = await api('PATCH', `/projects/${projectId}`, body);
-  if (status === 200) { toast('Projeto guardado'); $('projTitle').textContent = body.name; }
-  else toast(data?.error || 'Erro ao guardar', 'err');
+function renderProjects() {
+  const grid = $('projectsGrid');
+  grid.innerHTML = '';
+  $('projectsEmpty').style.display = projectsCache.length ? 'none' : 'block';
+  projectsCache.forEach((p) => {
+    const card = document.createElement('div');
+    card.className = 'proj-card';
+    const budget = Number(p.budget || 0).toLocaleString('pt-PT');
+    const workers = Array.isArray(p.worker_phones) ? p.worker_phones.length : 0;
+    const st = (p.status || 'active').toLowerCase();
+    card.innerHTML = `
+      <div class="pc-head">
+        <h3>${esc(p.name)}</h3>
+        <span class="status-pill ${st === 'active' ? '' : st}">${esc(p.status || 'active')}</span>
+      </div>
+      <div class="pc-addr">📍 ${esc(p.address || '—')}</div>
+      <div class="pc-stats">
+        <div class="pc-stat"><div class="v">€${budget}</div><div class="k">Orçamento</div></div>
+        <div class="pc-stat"><div class="v">${workers}</div><div class="k">Equipa</div></div>
+        <div class="pc-stat"><div class="v" style="font-size:13px;font-family:ui-monospace,Menlo,monospace">${esc(p.client_phone || '—')}</div><div class="k">Cliente</div></div>
+      </div>`;
+    card.addEventListener('click', () => openProjectModal(p));
+    grid.appendChild(card);
+  });
+}
+
+function openProjectModal(project) {
+  editingProjectId = project ? project.id : null;
+  const creating = !project;
+  $('projModalTitle').textContent = creating ? 'Novo projeto' : 'Editar projeto';
+  $('projModalSub').textContent = creating ? 'Crie uma nova obra na plataforma.' : `Editar “${project.name}”.`;
+  $('prjName').value = project?.name ?? '';
+  $('prjAddress').value = project?.address ?? '';
+  $('prjClient').value = project?.client_phone ?? '';
+  $('prjBudget').value = project?.budget ?? '';
+  $('prjWorkers').value = Array.isArray(project?.worker_phones) ? project.worker_phones.join(', ') : '';
+  // Client phone is immutable after creation; status only shown when editing.
+  $('prjClient').disabled = !creating;
+  $('prjClientField').style.opacity = creating ? '1' : '.6';
+  $('prjStatusField').style.display = creating ? 'none' : 'block';
+  if (!creating) $('prjStatus').value = (project.status || 'active');
+  $('projModal').classList.add('open');
+  $('prjName').focus();
+}
+function closeProjectModal() { $('projModal').classList.remove('open'); }
+
+function parsePhones(s) {
+  return String(s || '').split(/[,\n]/).map((x) => x.replace(/\D/g, '')).filter(Boolean);
+}
+
+async function saveProjectModal() {
+  const name = $('prjName').value.trim();
+  if (!name) return toast('Nome obrigatório', 'err');
+  const workerPhones = parsePhones($('prjWorkers').value);
+  const budget = Number($('prjBudget').value) || 0;
+  const address = $('prjAddress').value.trim();
+
+  if (editingProjectId === null) {
+    // Create
+    const clientPhone = $('prjClient').value.replace(/\D/g, '');
+    if (!clientPhone) return toast('Telefone do cliente obrigatório', 'err');
+    const { status, data } = await api('POST', '/projects', { name, address, clientPhone, workerPhones, budget });
+    if (status === 201) { closeProjectModal(); toast(`Projeto “${name}” criado`); await loadProjects(); }
+    else toast(data?.error || 'Erro ao criar', 'err');
+  } else {
+    // Update (client_phone is immutable server-side)
+    const body = { name, address, budget, worker_phones: workerPhones, status: $('prjStatus').value };
+    const { status, data } = await api('PATCH', `/projects/${editingProjectId}`, body);
+    if (status === 200) { closeProjectModal(); toast('Projeto guardado'); await loadProjects(); }
+    else toast(data?.error || 'Erro ao guardar', 'err');
+  }
 }
 
 // ── Nav ──────────────────────────────────────────────────────────────────────
@@ -184,9 +246,14 @@ function switchView(view) {
   $('addBtn').addEventListener('click', openAdd);
   $('cancelAdd').addEventListener('click', closeAdd);
   $('confirmAdd').addEventListener('click', addUser);
-  $('saveProjectBtn').addEventListener('click', saveProject);
   $('addModal').addEventListener('click', (e) => { if (e.target === $('addModal')) closeAdd(); });
   $('newPhone').addEventListener('keydown', (e) => { if (e.key === 'Enter') addUser(); });
+  // Projects
+  $('newProjectBtn').addEventListener('click', () => openProjectModal(null));
+  $('cancelProj').addEventListener('click', closeProjectModal);
+  $('confirmProj').addEventListener('click', saveProjectModal);
+  $('projModal').addEventListener('click', (e) => { if (e.target === $('projModal')) closeProjectModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeAdd(); closeProjectModal(); } });
 
   await api('POST', '/demo/seed');
   const { data, status } = await api('POST', '/demo/token', { role: 'founder' });
