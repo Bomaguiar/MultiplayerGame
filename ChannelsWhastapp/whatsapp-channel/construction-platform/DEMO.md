@@ -110,6 +110,37 @@ cd ChannelsWhastapp/whatsapp-channel/construction-platform/api
 npm test
 ```
 
+## Connecting real WhatsApp — the poller
+
+To drive the platform from an actual WhatsApp number there's a standalone
+poller in [`api/tools/whatsapp-poller/`](./api/tools/whatsapp-poller/). It
+bridges a WhatsApp account to the API in both directions:
+
+- **Inbound:** reads new incoming messages from your bridge, POSTs each to
+  `/whatsapp/incoming`, and sends the AI reply back.
+- **Outbound:** drains the proactive outbox (`/whatsapp/outbox`) and delivers
+  those messages (the 6pm "reaches out first" alerts).
+
+It ships with a **mock adapter** so you can watch the whole loop run against the
+demo server with no real WhatsApp:
+
+```bash
+# Terminal 1 — the demo server (seed it by opening http://localhost:4000/app/ once)
+cd api && npm run demo:server
+
+# Terminal 2 — the poller, mock bridge, pointed at the demo
+cd api/tools/whatsapp-poller
+BRIDGE=mock API_URL=http://localhost:4000 \
+  MOCK_INBOX=./mock-inbox.example.json \
+  ALLOWED_NUMBERS=351900000009,351900000002 node poller.mjs
+```
+
+You'll see it forward each scripted message, get the assistant's reply, and
+"send" it back. A real lharries `whatsapp-mcp` bridge is wired the same way with
+`BRIDGE=whatsappMcp` — see the poller's
+[`README.md`](./api/tools/whatsapp-poller/README.md) for the SQLite + Go-bridge
+setup, the safety/allowlist model, and `--dry-run`.
+
 ## How this maps to WhatsApp
 
 The dashboard is a demo lens onto the same API the WhatsApp layer drives. In

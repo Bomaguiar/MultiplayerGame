@@ -51,23 +51,27 @@ function saveCursor(path, cursor) {
 
 // ── platform API client ────────────────────────────────────────────────────────
 function apiClient(cfg) {
-  const headers = { 'x-watcher-token': cfg.watcherSecret, 'content-type': 'application/json' };
+  // Auth-only headers. We deliberately omit content-type on bodyless requests
+  // (e.g. the /sent POST) — Fastify rejects an empty body when content-type is
+  // application/json (FST_ERR_CTP_EMPTY_JSON_BODY).
+  const authHeaders = { 'x-watcher-token': cfg.watcherSecret };
+  const jsonHeaders = { ...authHeaders, 'content-type': 'application/json' };
   return {
     async postIncoming(payload) {
       const res = await fetch(`${cfg.apiUrl}/whatsapp/incoming`, {
-        method: 'POST', headers, body: JSON.stringify(payload),
+        method: 'POST', headers: jsonHeaders, body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(`POST /whatsapp/incoming ${res.status}: ${(await res.text()).slice(0, 200)}`);
       return res.json();
     },
     async getOutbox(limit) {
-      const res = await fetch(`${cfg.apiUrl}/whatsapp/outbox?limit=${limit}`, { headers });
+      const res = await fetch(`${cfg.apiUrl}/whatsapp/outbox?limit=${limit}`, { headers: authHeaders });
       if (!res.ok) throw new Error(`GET /whatsapp/outbox ${res.status}: ${(await res.text()).slice(0, 200)}`);
       return res.json();
     },
     async markSent(id) {
       const res = await fetch(`${cfg.apiUrl}/whatsapp/outbox/${encodeURIComponent(id)}/sent`, {
-        method: 'POST', headers,
+        method: 'POST', headers: authHeaders,
       });
       if (!res.ok) throw new Error(`POST /whatsapp/outbox/${id}/sent ${res.status}: ${(await res.text()).slice(0, 200)}`);
       return res.json();
