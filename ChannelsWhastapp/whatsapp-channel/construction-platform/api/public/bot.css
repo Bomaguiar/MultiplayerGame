@@ -132,8 +132,8 @@
    ELEVATION — give the simulator the same crafted feel as the portal.
    ════════════════════════════════════════════════════════════════════════════ */
 @media (prefers-reduced-motion: no-preference) {
-  .bot-body { opacity: 0; transition: opacity .5s ease; }
-  .bot-body.loaded { opacity: 1; }
+  /* Self-completing fade — never stuck invisible if a script fails to run. */
+  .bot-body { animation: pageFade .5s ease both; }
 }
 
 /* A breathing phone — subtle depth so it reads as a real device. */

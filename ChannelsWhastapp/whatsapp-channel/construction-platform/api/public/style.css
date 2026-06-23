@@ -402,8 +402,10 @@ body::before {
 
 /* Page + section entrance / scroll-reveal motion. */
 @media (prefers-reduced-motion: no-preference) {
-  body { opacity: 0; transition: opacity .5s ease; }
-  body.loaded { opacity: 1; }
+  /* Self-completing fade so the page is NEVER stuck invisible if a script
+     doesn't run (e.g. admin.js). No dependency on a JS-added `.loaded` class. */
+  body { animation: pageFade .5s ease both; }
+  @keyframes pageFade { from { opacity: 0; } to { opacity: 1; } }
 
   .reveal { opacity: 0; transform: translateY(18px); filter: blur(2px); }
   .reveal.in {
