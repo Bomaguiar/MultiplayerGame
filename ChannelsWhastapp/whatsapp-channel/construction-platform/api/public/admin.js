@@ -92,8 +92,9 @@ async function saveProject() {
 window.addUser = addUser;
 window.saveProject = saveProject;
 
-// ── Boot: get the founder demo token, then load ──────────────────────────────
+// ── Boot: seed demo data, get the founder demo token, then load ────────────────
 (async function init() {
+  await api('POST', '/demo/seed');
   const { data, status } = await api('POST', '/demo/token', { role: 'founder' });
   if (status !== 200 || !data?.token) {
     document.querySelector('.admin-wrap').innerHTML =
