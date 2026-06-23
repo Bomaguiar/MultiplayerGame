@@ -57,11 +57,18 @@ export class WhatsappMcpAdapter {
     this.db = new DatabaseSync(dbPath, { readOnly: true });
   }
 
-  // Fetch recent incoming individual messages. `sinceCursor` is a Set of
-  // already-processed message IDs (serialized as JSON array in the state file).
-  // This mirrors watcher.py's id-based deduplication — no dependency on a
-  // timestamp column existing or being in any particular format.
+  // Fetch recent incoming individual messages. `sinceCursor` is the persisted
+  // state: either null (never run before) or an array of already-processed
+  // message IDs. This mirrors watcher.py's id-based deduplication — no
+  // dependency on a timestamp column existing or being in any particular format.
+  //
+  // FIRST-RUN PRIMING: when there is no prior state (cursor is null/undefined),
+  // we swallow the existing backlog — record every current message id as "seen"
+  // and return ZERO messages. Without this, launching the poller would reply to
+  // your entire WhatsApp history. watcher.py does exactly the same (its
+  // `primed` flag). A fresh state file therefore means "start from now".
   async fetchIncoming(sinceCursor) {
+    const firstRun = sinceCursor === null || sinceCursor === undefined;
     const seenIds = new Set(Array.isArray(sinceCursor) ? sinceCursor : []);
 
     // Match watcher.py's exact query: recent messages, is_from_me=0, newest first.
@@ -82,10 +89,11 @@ export class WhatsappMcpAdapter {
     for (const r of rows) {
       // Skip groups — only individual chats (@s.whatsapp.net).
       if (!r.chat_jid || !r.chat_jid.includes('@s.whatsapp.net')) continue;
-      // Skip already-processed.
       const mid = String(r.id);
-      if (seenIds.has(mid)) continue;
-
+      if (seenIds.has(mid)) continue; // already processed
+      newSeen.push(mid);
+      // On the very first run, mark-as-seen WITHOUT emitting (prime the backlog).
+      if (firstRun) continue;
       messages.push({
         jid: r.chat_jid,
         from: jidToBare(r.sender || r.chat_jid),
@@ -94,7 +102,10 @@ export class WhatsappMcpAdapter {
         timestamp: null,
         messageId: mid,
       });
-      newSeen.push(mid);
+    }
+
+    if (firstRun) {
+      this.logger.log?.(`[whatsappMcp] primed ${newSeen.length} existing message(s) — starting from now, no replay.`);
     }
 
     // Cap the seen list so it doesn't grow forever (match watcher.py's 500 cap).

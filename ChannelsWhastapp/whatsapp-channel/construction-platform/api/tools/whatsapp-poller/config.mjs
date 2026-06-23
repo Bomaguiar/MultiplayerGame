@@ -3,6 +3,8 @@
 // Everything the poller needs is read once here, with sane defaults, so the
 // rest of the code can depend on a single validated config object.
 
+import { fileURLToPath } from 'node:url';
+
 function bool(v, dflt = false) {
   if (v === undefined || v === null || v === '') return dflt;
   return ['1', 'true', 'yes', 'on'].includes(String(v).toLowerCase());
@@ -41,8 +43,9 @@ export function loadConfig(argv = process.argv.slice(2)) {
 
     // Bridge selection + state
     bridge: process.env.BRIDGE || 'mock',
+    // fileURLToPath (not .pathname) so Windows gets a real path, not "/C:/...".
     statePath: process.env.STATE_PATH
-      || new URL('./.poller-state.json', import.meta.url).pathname,
+      || fileURLToPath(new URL('./.poller-state.json', import.meta.url)),
 
     // Safety
     allowed: parseAllowlist(process.env.ALLOWED_NUMBERS),
