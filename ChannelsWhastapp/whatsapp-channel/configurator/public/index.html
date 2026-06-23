@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Assistant Configurator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🤖 WhatsApp Assistant Configurator</h1>
+      <p>Manage permissions, whitelists, and custom menus</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="whitelist">Whitelist</button>
+      <button class="tab-btn" data-tab="permissions">Permissions</button>
+      <button class="tab-btn" data-tab="contacts">Contacts</button>
+      <button class="tab-btn" data-tab="menus">Custom Menus</button>
+    </div>
+
+    <!-- Whitelist Tab -->
+    <div id="whitelist" class="tab-content active">
+      <h2>Allowed Phone Numbers</h2>
+      <div class="whitelist-section">
+        <input type="text" id="newPhone" placeholder="351XXXXXXXXX (country code + number)" class="input-phone">
+        <button onclick="addPhone()" class="btn btn-add">+ Add Phone</button>
+      </div>
+      <div id="phoneList" class="phone-list"></div>
+    </div>
+
+    <!-- Permissions Tab -->
+    <div id="permissions" class="tab-content">
+      <h2>Permission Levels</h2>
+      <div class="permissions-grid" id="permissionsGrid"></div>
+    </div>
+
+    <!-- Contacts Tab -->
+    <div id="contacts" class="tab-content">
+      <h2>Contact Settings</h2>
+      <div class="contacts-section">
+        <input type="text" id="contactName" placeholder="Name (e.g., Pedro, Mom, Team)" class="input-text">
+        <select id="contactPhone" class="input-select">
+          <option value="">Select phone from whitelist...</option>
+        </select>
+        <select id="contactPermission" class="input-select">
+          <option value="admin">Admin (full access)</option>
+          <option value="user">User (restricted menu)</option>
+          <option value="guest">Guest (questions only)</option>
+        </select>
+        <button onclick="addContact()" class="btn btn-add">+ Add Contact</button>
+      </div>
+      <div id="contactsList" class="contacts-list"></div>
+    </div>
+
+    <!-- Custom Menus Tab -->
+    <div id="menus" class="tab-content">
+      <h2>Custom Menu Items per Contact</h2>
+      <div class="menus-section">
+        <select id="menuContact" class="input-select">
+          <option value="">Select contact...</option>
+        </select>
+        <div id="menuCheckboxes" class="menu-checkboxes"></div>
+        <button onclick="saveContactMenu()" class="btn btn-save">Save Menu</button>
+      </div>
+    </div>
+
+    <div class="footer">
+      <button onclick="saveAll()" class="btn btn-submit">💾 Save All Changes</button>
+      <div id="status" class="status"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

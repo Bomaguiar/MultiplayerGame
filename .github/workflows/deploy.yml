@@ -1,0 +1,62 @@
+name: Deploy — Construction Platform
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deploy environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+  push:
+    branches: [main]
+    paths:
+      - 'ChannelsWhastapp/whatsapp-channel/construction-platform/**'
+
+env:
+  API_DIR: ChannelsWhastapp/whatsapp-channel/construction-platform/api
+
+jobs:
+  test:
+    name: Pre-deploy Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ChannelsWhastapp/whatsapp-channel/construction-platform/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci || npm install
+      - run: npm test
+
+  build-and-push:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.API_DIR }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/construction-api:latest
+            ghcr.io/${{ github.repository_owner }}/construction-api:${{ github.sha }}

@@ -1,0 +1,46 @@
+name: CI — Construction Platform
+
+on:
+  push:
+    paths:
+      - 'ChannelsWhastapp/whatsapp-channel/construction-platform/**'
+  pull_request:
+    paths:
+      - 'ChannelsWhastapp/whatsapp-channel/construction-platform/**'
+
+jobs:
+  test:
+    name: Tests (Node 22)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ChannelsWhastapp/whatsapp-channel/construction-platform/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ChannelsWhastapp/whatsapp-channel/construction-platform/api/package-lock.json
+
+      - run: npm ci || npm install
+
+      - run: npm test
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image
+        run: |
+          docker build -t construction-api \
+            ChannelsWhastapp/whatsapp-channel/construction-platform/api
+
+      - name: Verify compose config
+        run: |
+          cd ChannelsWhastapp/whatsapp-channel/construction-platform
+          docker compose config --quiet

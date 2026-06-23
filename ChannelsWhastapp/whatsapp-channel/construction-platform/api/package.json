@@ -1,0 +1,25 @@
+{
+  "name": "construction-whatsapp-api",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Role-aware API for the WhatsApp construction platform",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "vitest run",
+    "demo": "node demo/demo.mjs",
+    "demo:server": "node demo/server.mjs",
+    "migrate": "node migrations/run.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.105.0",
+    "@fastify/static": "^7.0.4",
+    "fastify": "^4.28.1",
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "pg-mem": "^3.0.5",
+    "vitest": "^2.1.8"
+  }
+}

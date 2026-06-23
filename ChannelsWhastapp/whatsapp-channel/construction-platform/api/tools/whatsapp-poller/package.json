@@ -1,0 +1,11 @@
+{
+  "type": "module",
+  "name": "whatsapp-poller",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone WhatsApp <-> Pedra & Luz platform bridge poller (pluggable adapters, no runtime deps).",
+  "scripts": {
+    "start": "node poller.mjs",
+    "start:mock": "node poller.mjs"
+  }
+}

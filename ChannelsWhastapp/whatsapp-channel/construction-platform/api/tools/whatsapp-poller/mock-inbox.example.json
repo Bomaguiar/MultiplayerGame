@@ -1,0 +1,14 @@
+[
+  {
+    "from": "351900000009",
+    "body": "pintámos o portão hoje, 2 pessoas, 8h",
+    "timestamp": 1750000000,
+    "messageId": "demo-worker-1"
+  },
+  {
+    "from": "351900000002",
+    "body": "Bom dia! Quando fica pronta a cozinha?",
+    "timestamp": 1750000100,
+    "messageId": "demo-customer-1"
+  }
+]

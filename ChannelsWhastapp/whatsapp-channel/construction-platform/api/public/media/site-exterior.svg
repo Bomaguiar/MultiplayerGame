@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Exterior wall and garden">
+  <defs>
+    <linearGradient id="skyA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9D9B8"/><stop offset="1" stop-color="#C9A06A"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#skyA)"/>
+  <circle cx="610" cy="150" r="70" fill="#F4E6C6" opacity="0.85"/>
+  <rect y="380" width="800" height="220" fill="#6E5A3E"/>
+  <rect x="60" y="170" width="300" height="230" fill="#CFC4AE"/>
+  <rect x="60" y="170" width="300" height="230" fill="none" stroke="#8A7A58" stroke-width="3"/>
+  <rect x="380" y="120" width="360" height="280" fill="#B9AC92"/>
+  <rect x="420" y="180" width="90" height="160" fill="#3A2E1F"/>
+  <rect x="560" y="180" width="90" height="160" fill="#3A2E1F"/>
+  <rect x="0" y="370" width="800" height="14" fill="#2E2820"/>
+  <g stroke="#4d5a3a" stroke-width="5">
+    <line x1="120" y1="380" x2="120" y2="330"/><line x1="160" y1="380" x2="160" y2="340"/>
+    <line x1="200" y1="380" x2="200" y2="330"/><line x1="700" y1="380" x2="700" y2="335"/>
+  </g>
+</svg>
