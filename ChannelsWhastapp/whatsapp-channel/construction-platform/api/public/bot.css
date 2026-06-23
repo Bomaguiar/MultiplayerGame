@@ -127,3 +127,58 @@
   .phone { height: 560px; }
   .actions-panel { min-height: auto; }
 }
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   ELEVATION — give the simulator the same crafted feel as the portal.
+   ════════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: no-preference) {
+  .bot-body { opacity: 0; transition: opacity .5s ease; }
+  .bot-body.loaded { opacity: 1; }
+}
+
+/* A breathing phone — subtle depth so it reads as a real device. */
+.phone {
+  box-shadow: 0 30px 60px rgba(45, 36, 22, .16), 0 2px 0 rgba(255,255,255,.5) inset;
+  position: relative;
+}
+
+/* Live "online" pulse next to the assistant name. */
+.phone-id strong { display: inline-flex; align-items: center; gap: 7px; }
+.phone-id strong::before {
+  content: ''; width: 7px; height: 7px; border-radius: 50%; background: #5fd07a;
+  box-shadow: 0 0 0 0 rgba(95, 208, 122, .7); animation: onlinePulse 2.2s ease-out infinite;
+}
+@keyframes onlinePulse {
+  0%   { box-shadow: 0 0 0 0 rgba(95, 208, 122, .6); }
+  70%  { box-shadow: 0 0 0 7px rgba(95, 208, 122, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(95, 208, 122, 0); }
+}
+
+/* Bubbles arrive with a soft pop, alternating origin by side. */
+.bubble { animation: bubbleIn .28s cubic-bezier(.2,.8,.2,1) both; transform-origin: bottom; }
+.bubble.me   { transform-origin: bottom right; }
+.bubble.them { transform-origin: bottom left; }
+@keyframes bubbleIn { from { opacity: 0; transform: translateY(8px) scale(.96); } to { opacity: 1; transform: none; } }
+
+/* Typing indicator: animated dots instead of static text. */
+.bubble.typing { display: inline-flex; align-items: center; gap: 4px; min-height: 20px; }
+.bubble.typing::after {
+  content: '● ● ●'; letter-spacing: 2px; font-size: 8px; color: var(--muted);
+  animation: typingFade 1.2s ease-in-out infinite;
+}
+@keyframes typingFade { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
+
+/* Interactive controls + quick replies lift slightly on hover. */
+.ix-btn { transition: transform .15s ease, background .15s, border-color .15s, box-shadow .15s; }
+.ix-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(45,36,22,.1); }
+.quick button { transition: transform .15s ease, border-color .15s, color .15s, background .15s; }
+.quick button:hover { transform: translateY(-1px); background: var(--gold-soft); }
+
+/* Send button gains a subtle ready-glow. */
+.send { transition: transform .15s ease, background .15s, box-shadow .15s; box-shadow: 0 4px 14px rgba(166,124,69,.35); }
+.send:hover { transform: scale(1.06); }
+.send:active { transform: scale(.94); }
+
+/* Action cards: a touch more depth + a gold rail that fills on entry. */
+.action-card { transition: transform .2s ease, box-shadow .2s ease; }
+.action-card:hover { transform: translateX(2px); box-shadow: 0 8px 20px rgba(45,36,22,.08); }

@@ -576,8 +576,44 @@ window.toggleNotifications = toggleNotifications; window.markNotifRead = markNot
 
 function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
+// ── Motion / polish: scroll progress, sticky-bar state, scroll-reveal ─────────
+function setupChrome() {
+  // Thin scroll-progress hairline at the very top of the page.
+  const bar = document.createElement('div');
+  bar.className = 'scroll-progress';
+  document.body.appendChild(bar);
+  const topbar = document.querySelector('.topbar');
+  const onScroll = () => {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    bar.style.width = `${max > 0 ? (h.scrollTop / max) * 100 : 0}%`;
+    if (topbar) topbar.classList.toggle('scrolled', h.scrollTop > 8);
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+}
+
+// Reveal the persistent sections as they enter the viewport (staggered).
+let _revealObserver = null;
+function setupReveal() {
+  const targets = ['project', 'budget', 'milestones', 'selections', 'gallery',
+    'logs', 'tasks', 'materials', 'changeOrders'].map((id) => $(id)).filter(Boolean);
+  if (!('IntersectionObserver' in window)) { targets.forEach((t) => t.classList.add('in')); return; }
+  _revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); _revealObserver.unobserve(e.target); } });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+  targets.forEach((t, i) => {
+    t.classList.add('reveal');
+    t.style.setProperty('--reveal-delay', `${Math.min(i, 6) * 60}ms`);
+    _revealObserver.observe(t);
+  });
+}
+
 // ── Boot ─────────────────────────────────────────────────────────────────────
 (async function init() {
+  setupChrome();
+  setupReveal();
+  requestAnimationFrame(() => document.body.classList.add('loaded'));
   await api('POST', '/demo/seed');
   document.querySelectorAll('.role-btn').forEach((b) =>
     b.addEventListener('click', () => setRole(b.dataset.role)));

@@ -51,7 +51,7 @@ function typing() {
   const chat = $('chat');
   const b = document.createElement('div');
   b.className = 'bubble them typing';
-  b.textContent = 'a escrever…';
+  b.setAttribute('aria-label', 'a escrever');
   chat.appendChild(b); chat.scrollTop = chat.scrollHeight;
   return b;
 }
@@ -224,6 +224,7 @@ $('attachBtn').addEventListener('click', () => (photoArmed ? disarmPhoto() : arm
 $('micBtn').addEventListener('click', sendVoice);
 
 (async function init() {
+  requestAnimationFrame(() => document.body.classList.add('loaded'));
   await api('POST', '/demo/seed');
   document.querySelectorAll('.role-btn').forEach((b) => b.addEventListener('click', () => setRole(b.dataset.role)));
   await detectMode();
