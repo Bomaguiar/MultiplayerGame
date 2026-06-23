@@ -62,6 +62,37 @@ Full vision: [`BLUEPRINT.md`](./BLUEPRINT.md). Demo guide: [`DEMO.md`](./DEMO.md
 | T24 | Text-only bridge fallback (`interactiveToText`) + outbox | ✅ |
 | T25 | **Proactive outbound alerts** (`brain/proactive` + outbox) | ✅ |
 
+## June 2026 Session 4 — demo polish, design elevation, real WhatsApp poller
+Pedro ran the demo on **Windows/PowerShell** (not the 2012 Mac this time) and hit
+real setup bugs; then asked to make it "special" (design refs) + wire WhatsApp.
+- **Windows fixes:** `demo:server` used Unix `DEMO_MODE=1 node …` → cmd.exe error.
+  Dropped the prefix (server.mjs already passes `demoMode:true`; also sets the env
+  itself). And the dashboard was blank because the frontend `api()` helper sent
+  `Content-Type: application/json` on bodyless POSTs → Fastify `FST_ERR_CTP_EMPTY_JSON_BODY`
+  400 on `/demo/seed`. Fixed in app.js/bot.js/admin.js (only set content-type when
+  there's a body). **This empty-JSON-body gotcha bit three times — remember it.**
+- **Design elevation** (`public/style.css` + `app.js`, `bot.css` + `bot.js`):
+  additive "expensive" layer — SVG paper-grain overlay, sticky glassy blurred
+  topbar + scroll-progress hairline, IntersectionObserver staggered scroll-reveal,
+  editorial hero (floating light + blueprint grid), card hover-lift + animated h2
+  underline, button sheen, animated budget bars, warm scrollbars. Bot: online
+  pulse, animated typing dots, bubble pop-in. Respects `prefers-reduced-motion`.
+  NOTE: no screenshot tooling in this env — crafted against the real DOM, verified
+  it loads. Pedro to eyeball; ask whether remaining "generic" feel is layout vs finish.
+- **WhatsApp poller** (`api/tools/whatsapp-poller/`): standalone, dependency-free
+  Node script bridging a real WhatsApp number to the API both ways. Inbound: bridge
+  → `POST /whatsapp/incoming` → reply back. Outbound: drain `GET /whatsapp/outbox`
+  → send → `POST /outbox/:id/sent`. Pluggable adapters: `whatsappMcp` (lharries —
+  read-only `node:sqlite` on `messages.db`, outbound `POST {BRIDGE_API_URL}/send`)
+  and `mock` (scripted JSON, for testing against the demo with no real WhatsApp).
+  Safety: phone allowlist (both directions), `--dry-run`, persisted inbound cursor,
+  no group auto-reply. README has full setup + troubleshooting. Built by a subagent,
+  verified live by me end-to-end on the mock loop (worker log + customer help +
+  proactive drain). **Bridge assumptions Pedro must confirm:** timestamp format
+  (ISO string vs Unix int) for cursor ordering, `sender` vs `chat_jid` for inbound,
+  `/api/send` accepts a bare number, WAL mode for concurrent reads. See README.
+- Tests still 196 (frontend + poller aren't under vitest). `node --check` all green.
+
 ## June 2026 Session 3 — richer bot + proactive outreach
 - **Buttons/voice:** tools return WhatsApp-style `interactive` payloads (tap to
   complete tasks / approve materials, quick-reply chips). `interpretButton()`
